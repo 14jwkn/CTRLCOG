@@ -1,0 +1,47 @@
+#For each resting-state subject ID, extract the associated 3T REST1-2 ICA-FIX surface-based fMRI data files from the DataLad repository.
+#Output:
+#rfMRI_REST*_*.dtseries.nii fMRI files.
+
+#Usage: bash <scriptname> <subid>
+
+#Collect input with names.
+subid=${1}
+echo "Doing ${subid}"
+
+#Set outpath.
+outpath=$SCRATCH/FLEXCOG/inputs/data/fmri/${subid}
+
+#If the output files all exist, skip.
+file1=rfMRI_REST1_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii
+file2=rfMRI_REST1_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii
+file3=rfMRI_REST2_LR_Atlas_MSMAll_hp2000_clean.dtseries.nii
+file4=rfMRI_REST2_RL_Atlas_MSMAll_hp2000_clean.dtseries.nii
+if [ -f "$outpath/${file1}" ] && [ -f "$outpath/${file2}" ] && [ -f "$outpath/${file3}" ] && [ -f "$outpath/${file4}" ]
+then
+  	echo "${subid} done"
+
+#If it doesn't exist.
+else
+	
+	#Install datalad dataset.
+	datapath=$SCRATCH/FLEXCOG/slurmtemp/HCP1200-${subid}/
+	mkdir -p ${datapath}
+	source=https://github.com/datalad-datasets/human-connectome-project-openaccess.git
+	datalad install -s ${source} ${datapath}
+
+	#Set the HCP1200 directory and file names.
+	hcp_path=$SCRATCH/FLEXCOG/slurmtemp/HCP1200-${subid}/HCP1200/${subid}
+	filenames=MNINonLinear/Results/rfMRI_REST*_*/rfMRI_REST*_*_Atlas_MSMAll_hp2000_clean.dtseries.nii
+
+	#Make the outpath, get the dataset and files, copy it over to the outpath,
+	#and remove the dataset and files.
+	mkdir -p ${outpath}
+	(cd ${hcp_path}
+	datalad get -n MNINonLinear
+	datalad get ${filenames}
+	cp ${filenames} ${outpath}
+	datalad remove -d ${hcp_path}/MNINonLinear -r)
+  	(cd ${outpath}
+	datalad remove -d ${datapath} -r
+	echo "${subid} done")
+fi

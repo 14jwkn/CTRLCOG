@@ -1,0 +1,53 @@
+#For each resting-state subject ID, use the 360 cortical Glasser atlas to average demeaned voxelwise fMRI data.
+#Output:
+#demean_rfMRI_REST*_*_meants.csv 360 ROI timeseries files.
+
+#Usage: bash <scriptname> <subject ID>
+
+#Collect input with names.
+sub=$2
+echo "Doing $sub"
+
+#CIFTIFY tool.
+cifsimg=../containers/tigrlab_fmriprep_ciftify_v1.3.2-2.3.3-2019-08-16-c0fcb37f1b56.simg
+
+#Atlas directory and file.
+atlasdir=../inputs/data/atlas
+atlasfile=Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii
+
+#Directory of output mean timeseries data. Create if it doesn't exist.
+meantsdir=../outputs/r_meants/$sub
+if [ ! -d "$meantsdir" ]
+then
+	mkdir $meantsdir
+fi
+
+#Set the fMRI directory accordingly.
+fmridir=../inputs/data/fmri/$sub
+	
+#For each run file.
+for runfile in $fmridir/demean_*.nii
+do
+
+	#Remove folder path.
+	runfile=$(basename $runfile)
+  	echo "Doing $runfile"
+
+  	#If output file exists, continue to the next one.
+	outfile=${runfile}_meants.csv
+  	if [ -f "$meantsdir/$outfile" ]
+	then	
+    		echo "$outfile exists"
+    		continue
+  	fi
+
+  	#Find the mean timeseries.
+  	singularity exec \
+    		-B $meantsdir:/meantsdir \
+    		-B $fmridir:/fmridir \
+    		-B $atlasdir:/atlasdir \
+      		$cifsimg ciftify_meants \
+        		--outputcsv=/meantsdir/$outfile \
+        		/fmridir/$runfile \
+        		/atlasdir/$atlasfile
+done	

@@ -1,0 +1,38 @@
+#For each resting-state subject ID, extract the associated 3T REST1-2 fMRI relative FD at each data point from the DataLad repository.
+#Output:
+#Movement_RelativeRMS.txt FD timeseries files.
+
+#Usage: bash <scriptname> <subid>
+
+#Collect input with names.
+subid=${1}
+echo "Doing ${subid}"
+
+#Set outpath.
+outpath=$SCRATCH/FLEXCOG/inputs/data/motion/${subid}/
+
+#Install datalad dataset.
+datapath=$SCRATCH/FLEXCOG/slurmtemp/HCP1200-${subid}/
+mkdir -p ${datapath}
+source=https://github.com/datalad-datasets/human-connectome-project-openaccess.git
+datalad install -s ${source} ${datapath}
+
+#Set the HCP1200 directory and file names.
+hcp_path=$SCRATCH/FLEXCOG/slurmtemp/HCP1200-${subid}/HCP1200/${subid}
+filenames=MNINonLinear/Results/rfMRI_REST*_*/Movement_RelativeRMS.txt
+
+	#Make the outpath, get the dataset and files, copy it over to the outpath,
+	#and remove the dataset and files.
+	mkdir -p ${outpath}/REST1_LR/
+	mkdir -p ${outpath}/REST1_RL/
+	mkdir -p ${outpath}/REST2_LR/
+	mkdir -p ${outpath}/REST2_RL/
+	(cd ${hcp_path}
+	datalad get -n MNINonLinear
+	datalad get ${filenames}
+	cp ${filenames} ${outpath}
+	datalad remove -d ${hcp_path}/MNINonLinear -r)
+  	(cd ${outpath}
+	datalad remove -d ${datapath} -r
+	echo "${subid} done")
+fi
