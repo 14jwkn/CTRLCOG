@@ -107,12 +107,12 @@ for cblock=block_list
                 c_ctrl_list = string({'ave','mod'});
             end
             for cctrl=c_ctrl_list
-                 infile = append(inpath,wantpred,'/',wantpred,'_',cctrl,'_',cstatetype,'_',cseptype,'_',corrtype,'_',cfeatver,'_',cblock,'_round.csv');
+                 infile = append(inpath,wantpred,'/',wantpred,'_',cctrl,'_',cstatetype,'_',cseptype,'_',corrtype,'_covha_',cblock,'_round.csv');
                  inmat = readtable(infile);
                  inmat.Properties.RowNames = string(inmat{:,1}); 
                  inmat(:,1) = [];
                  inmat = inmat(ccog,:);
-                 infilep = append(inpath,wantpred,'/',wantperm,'_',wantpred,'_',cctrl,'_',cstatetype,'_',cseptype,'_',corrtype,'_',cfeatver,'_',cblock,'_pval.csv');
+                 infilep = append(inpath,wantpred,'/',wantperm,'_',wantpred,'_',cctrl,'_',cstatetype,'_',cseptype,'_',corrtype,'_covha_',cblock,'_pval.csv');
                  inmatp = readtable(infilep);
                  inmatp.Properties.RowNames = string(inmatp{:,1}); 
                  inmatp(:,1) = [];

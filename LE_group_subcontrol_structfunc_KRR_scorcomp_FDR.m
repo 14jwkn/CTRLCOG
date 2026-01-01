@@ -108,8 +108,7 @@ for cctrl=cctrl_list
         
         %Read.
         inpath = append(basepath,'KRRXFS/',cctrl,'_',cstate,'_',cseptype,'_',...
-                        contype,'_',alph,'_',mykernel,'_',ynorm,'_',nrep,'_',...
-                        inner_k,'_',outer_k,'_',sctype,'/');
+                        nrep,'_',inner_k,'_',outer_k,'_',sctype,'/');
         infile = append(inpath,'testacc.csv');
         inmat = readtable(infile,ReadRowNames=true);
         

@@ -21,6 +21,8 @@ cv_permF.m - Generates permutation indices for permutation testing while respect
 
 threshold_arbmeasure.m - Threshold edges in a square matrix by an arbitrary measure.
 
+thres_with_mst.m - Create minimum spanning tree and add connections to desired density.
+
 averMeas.m - Calculates average controllability on a square matrix.
 
 moduMeas.m - Calculates modal controllability on a square matrix.
@@ -102,6 +104,8 @@ Analysis:
 
     LE_group_subcontrol_structfunc_stateview_controlqc.m - For a type of SC normalization, and the type and percentage of thresholding, for the average dFC, sFC, and SC matrices across participants, find the regions with errors regarding Gramian eigenvalues, verify the error in their corresponding values by collecting the Gramian eigenvalue, average controllability, and modal controllability. 
 
+    LE_group_subcontrol_structfunc_stateview_controlqc.m For a given k for clustering, type of SC normalization, and type and percentage of thresholding, find regions with Gramian errors and plot them.
+
 9. Plot the average matrices for SC, dFC, and sFC and the corresponding average and modal controllability on the brain.
 
     LE_group_subcontrol_structfunc_stateview.py - For the given k for clustering, SC type of normalization, and thresholding type and percentage, plot the dFC, SC, and sFC matrices organized according to hemisphere and network. Also save the network legends and color bars.
@@ -155,3 +159,20 @@ Analysis:
     LE_group_subcontrol_structfunc_KRR_score_bothctrl.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV similar to the main analysis but with both average and modal controllability in the same model. Generate the CV accuracy for the test set, the CV accuracy for the inner CV for the best hyperparameter set, the decomposed CV accuracy for the test set for each feature band, the decomposed CV accuracy after demeaning of the test set according to the decomposition assumptions, and the Haufe scores.
 
     LE_group_subcontrol_structfunc_KRR_score_format_bothctrl.R - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, collect decomposed accuracy scores on the model predicting each cognitive variable in the given batch using both average and modal controllability calculated from the set of state matrices specified. Reformat to generate percentages of the total accuracy score.
+
+15. Compare models with and without minimum spanning tree.
+
+    LE_group_subcontrol_structfunc_KRR_score_mst_compare.R - For a given k for clustering type of SC normalization, and type and percentage of thresholding, collect feature scores from MST and no MST versions predicting each cognitive variable and correlate them.
+
+16. Compare models with discrete vs continuous time systems (In Progress - no continuous modal controllability).
+
+    LE_group_subcontrol_structfunc_cont.py - For a given k for clustering, type of SC normalization, type and percentage of  thresholding for the subject, calculate continuous time system controllability versions for each state.
+
+    LE_group_subcontrol_structfunc_cont_collect.py - For a given k for clustering, type of SC normalization, type and percentage of thresholding, collect continuous time system controllability versions for each state from all subjects.
+
+    LE_group_subcontrol_structfunc_KRR_score_cont.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV. This model predicts each cognitive variable in the given batch using controllability calculated with the continuous time system  in the set of state matrices specified. CV is done for the given repetitions, and inner and outer fold number. To facilitate permutation testing with the same parameters set, for each fold, the Y variable with transformations applied prior to model fitting, alpha, beta, and gamma are all saved. Next, the CV accuracy for the test set, the CV accuracy for the inner CV for the best hyperparameter set, the decomposed CV accuracy for the test set for each feature band, and the decomposed CV accuracy after demeaning of the test set according to the decomposition assumptions are all saved. Lastly, the Haufe scores are also saved.
+
+    LE_group_subcontrol_structfunc_KRR_score_format_cont.R - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, collect decomposed accuracy scores on the model predicting each cognitive variable in the given batch using controllability calculated with the continuous time system calculated from the set of state matrices specified. Reformat to generate percentages of the total accuracy score.
+
+    LE_group_subcontrol_structfunc_KRR_score_cont_compare.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, and control metric, collect feature scores from discrete and continuous time system versions predicting each cognitive variable and correlate them.
+    

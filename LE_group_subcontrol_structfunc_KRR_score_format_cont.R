@@ -1,8 +1,8 @@
 # For a given k for clustering, type of SC normalization, and type and 
 # percentage of thresholding, collect decomposed accuracy scores on the model 
-# predicting each cognitive variable in the given batch using either average 
-# controllability, modal controllability, or degree calculated from the set of 
-# state matrices specified. Reformat to generate percentages of the total accuracy 
+# predicting each cognitive variable in the given batch using controllability 
+# calculated with the continuous time system calculated from the set of state 
+# matrices specified. Reformat to generate percentages of the total accuracy 
 # score.
 # Output:
 # testacc_noP.csv Test set CV accuracy score with no p-values.
@@ -48,7 +48,7 @@ sc_subgroup <- 'dr_full'
 basepath <- paste0('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/',
                    subgroup,'/',k,'/SC_dFC/',
                    sc_subgroup,'/collect/',threstype,'/',thresval,'/')
-krrpath <- paste0(basepath,'KRRXFS/',controltype,'_',statetype,'_',septype,'_',
+krrpath <- paste0(basepath,'KRRXFS/cont_',controltype,'_',statetype,'_',septype,'_',
                    nrep,'_',inner_k,'_',outer_k,'_',sctype,'/')
 
 #Set parameters.

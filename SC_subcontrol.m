@@ -37,8 +37,27 @@ submat = h5read(infile,inkey);
 %Remove diagonal.
 submat = submat.*~eye(size(submat));
 
+%If doing group CV thresholding with minimum spanning tree.
+if strcmp(threstype,'groupconsist_mst')
+
+    %Read in group CV matrix.
+    infile = append(dtipath,'group_cv_',sctype,'.csv');
+    groupcv = readmatrix(infile);
+    
+    %Convert to square.
+    sq_cv = zeros(nroi,nroi);
+    sq_cv(triu(true(nroi),1)) = groupcv;
+    sq_cv = sq_cv + sq_cv.';
+    
+    %Create MST and iteratively add back the smallest edges until target
+    %percentage reached.
+    sq_cv_th = thres_with_mst(sq_cv,pkeep);
+    
+    %Threshold subject matrix with it.      
+    submat(sq_cv_th==0) = 0;  
+
 %If doing group CV thresholding.
-if strcmp(threstype,'groupconsist')
+elseif strcmp(threstype,'groupconsist')
     
     %Read in group CV matrix.
     infile = append(dtipath,'group_cv_',sctype,'.csv');

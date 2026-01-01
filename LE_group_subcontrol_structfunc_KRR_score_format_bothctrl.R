@@ -35,10 +35,9 @@ thresval <- args[4]
 controltype <- args[5]
 statetype <- args[6]
 septype <- args[7]
-contype <- args[8]
-nrep <- args[9]
-inner_k <- args[10]
-outer_k <- args[11]
+nrep <- args[8]
+inner_k <- args[9]
+outer_k <- args[10]
 print(paste(k,sctype,threstype,thresval,controltype,statetype,septype,nrep,
             inner_k,outer_k,sep=' '))
 

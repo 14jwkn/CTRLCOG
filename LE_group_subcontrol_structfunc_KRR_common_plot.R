@@ -1320,11 +1320,10 @@ for (cctrl in ctrl_list) {
   
   #Generate path.
   krrpath <- paste0(basepath,'KRRXFS/',cctrl,'_',statetype,'_',septype,'_',
-                    contype,'_',alph,'_',mykernel,'_',ynorm,'_',nrep,'_',inner_k,
-                    '_',outer_k,'_',sctype,'/')
+                    nrep,'_',inner_k,'_',outer_k,'_',sctype,'/')
   
   #Read in cross-cognition p-values.
-  infile <- paste0(compath,cctrl,'_',statetype,'_',septype,'_TwoP_BHFDR_',cfeatver,'_feat.csv')
+  infile <- paste0(compath,cctrl,'_',statetype,'_',septype,'_TwoP_BHFDR_covha_feat.csv')
   twop_BH <- read.csv(infile,row.names=1)
   
   #Extract feature labels.
@@ -1335,7 +1334,7 @@ for (cctrl in ctrl_list) {
     ccog <- coglist[cidx]
     
     #Read in the omnibus matrix.
-    infile <- paste0(krrpath,ccog,'_',cfeatver,'_featscores.csv')
+    infile <- paste0(krrpath,ccog,'_covha_featscores.csv')
     omnimat <- read.csv(infile,row.names=1)
     
     #Select score to display.

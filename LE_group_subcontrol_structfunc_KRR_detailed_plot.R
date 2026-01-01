@@ -933,150 +933,146 @@ names(regcolors) <- reglist
 
 # Collect Data ------------------------------------------------------------
   
-#Feature versions.
-for (fidx in 1:nfeatvers) {
-  cfeatver <- featvers[fidx]
+
+#Read in cross-cognition p-values.
+infile <- paste0(compath,controltype,'_',statetype,'_',septype,'_TwoP_BHFDR_covha_feat.csv')
+twop_BH <- read.csv(infile,row.names=1)
+
+#Extract feature labels.
+featlabs <- rownames(twop_BH)
+
+#P versions.
+for (pidx in 1:npvers) {
+  cpver <- pvers[pidx]
   
-  #Read in cross-cognition p-values.
-  infile <- paste0(compath,controltype,'_',statetype,'_',septype,'_TwoP_BHFDR_covha_feat.csv')
-  twop_BH <- read.csv(infile,row.names=1)
-  
-  #Extract feature labels.
-  featlabs <- rownames(twop_BH)
-  
-  #P versions.
-  for (pidx in 1:npvers) {
-    cpver <- pvers[pidx]
+  #Quantile versions.
+  for (qidx in 1:nq) {
+    cq <- qlist[qidx]
     
-    #Quantile versions.
-    for (qidx in 1:nq) {
-      cq <- qlist[qidx]
+    #Produce column names for all versions of interest, including state and cognition.
+    colcollect <- c()
+    for (cstate in states) {
+      for (ccog in coglist) {
+        colcollect <- c(colcollect,paste0(cstate,'.',ccog))
+      }
+    }
+    ncolcollect <- length(colcollect)
+    
+    #Collect values and maximum and minimum without thresholding.
+    ccollector <- matrix(NA,nroi,ncolcollect)
+    rownames(ccollector) <- paste0('r',1:nroi)
+    colnames(ccollector) <- colcollect
+    cmaxmin <- matrix(NA,2,ncolcollect)
+    rownames(cmaxmin) <- c('max','min')
+    colnames(cmaxmin) <- colcollect
+    
+    #Collect cognitive versions of interest.
+    for (cidx in 1:ncog) {
+      ccog <- coglist[cidx]
       
-      #Produce column names for all versions of interest, including state and cognition.
-      colcollect <- c()
+      #Read in the omnibus matrix.
+      infile <- paste0(krrpath,ccog,'_covha_featscores.csv')
+      omnimat <- read.csv(infile,row.names=1)
+      
+      #Select score to display.
+      full_score <- omnimat[,'Score']
+      
+      #Select p-values.
+      pval <- twop_BH[,cidx]
+      
+      #Threshold.
+      score <- full_score
+      score[pval >= 0.05] <- NA
+      
+      #Remove bottom X%.
+      cq <- qlist[1]
+      cqmat <- score[score>0]
+      posq <- quantile(cqmat,probs=(cq/100),na.rm=T)
+      cqmat <- -score[score<0]
+      negq <- quantile(cqmat,probs=(cq/100),na.rm=T)
+      score_thres <- score
+      score_thres[(score>0)&(score<posq)] <- NA
+      score_thres[(score<0)&(score>(-negq))] <- NA
+      score <- score_thres
+      
+      #Add labels.
+      names(full_score) <- rownames(omnimat)
+      names(score) <- rownames(omnimat)
+      
+      #State types.
       for (cstate in states) {
-        for (ccog in coglist) {
-          colcollect <- c(colcollect,paste0(cstate,'.',ccog))
-        }
+        
+        #Generate the collector label.
+        collect_lab <- paste0(cstate,'.',ccog)
+        
+        #Generate region scores and labels.
+        reg_score <- score[grepl(cstate,names(score))]
+        wholenames <- names(reg_score)
+        barenames <- gsub(paste0(cstate,'_'),'',wholenames)
+        names(reg_score) <- barenames
+        ccollector[barenames,collect_lab] <- reg_score
+        
+        #Generate max and min.
+        reg_maxmin <- full_score[grepl(cstate,names(full_score))]
+        cmaxmin['max',collect_lab] <- max(reg_maxmin,na.rm=T)
+        cmaxmin['min',collect_lab] <- min(reg_maxmin,na.rm=T)
       }
-      ncolcollect <- length(colcollect)
-      
-      #Collect values and maximum and minimum without thresholding.
-      ccollector <- matrix(NA,nroi,ncolcollect)
-      rownames(ccollector) <- paste0('r',1:nroi)
-      colnames(ccollector) <- colcollect
-      cmaxmin <- matrix(NA,2,ncolcollect)
-      rownames(cmaxmin) <- c('max','min')
-      colnames(cmaxmin) <- colcollect
-      
-      #Collect cognitive versions of interest.
-      for (cidx in 1:ncog) {
-        ccog <- coglist[cidx]
-        
-        #Read in the omnibus matrix.
-        infile <- paste0(krrpath,ccog,'_',cfeatver,'_featscores.csv')
-        omnimat <- read.csv(infile,row.names=1)
-        
-        #Select score to display.
-        full_score <- omnimat[,'Score']
-        
-        #Select p-values.
-        pval <- twop_BH[,cidx]
-        
-        #Threshold.
-        score <- full_score
-        score[pval >= 0.05] <- NA
-        
-        #Remove bottom X%.
-        cq <- qlist[1]
-        cqmat <- score[score>0]
-        posq <- quantile(cqmat,probs=(cq/100),na.rm=T)
-        cqmat <- -score[score<0]
-        negq <- quantile(cqmat,probs=(cq/100),na.rm=T)
-        score_thres <- score
-        score_thres[(score>0)&(score<posq)] <- NA
-        score_thres[(score<0)&(score>(-negq))] <- NA
-        score <- score_thres
-        
-        #Add labels.
-        names(full_score) <- rownames(omnimat)
-        names(score) <- rownames(omnimat)
-        
-        #State types.
-        for (cstate in states) {
-          
-          #Generate the collector label.
-          collect_lab <- paste0(cstate,'.',ccog)
-          
-          #Generate region scores and labels.
-          reg_score <- score[grepl(cstate,names(score))]
-          wholenames <- names(reg_score)
-          barenames <- gsub(paste0(cstate,'_'),'',wholenames)
-          names(reg_score) <- barenames
-          ccollector[barenames,collect_lab] <- reg_score
-          
-          #Generate max and min.
-          reg_maxmin <- full_score[grepl(cstate,names(full_score))]
-          cmaxmin['max',collect_lab] <- max(reg_maxmin,na.rm=T)
-          cmaxmin['min',collect_lab] <- min(reg_maxmin,na.rm=T)
-        }
+    }
+    
+    #Collect values and max-min for comparisons.
+    ccols <- c()
+    for (ccog in coglist) {ccols <- c(ccols,ccog)}
+    nccols <- length(ccols)
+    threscollect <- matrix(NA,nfull,nccols)
+    rownames(threscollect) <- full_featlabs
+    colnames(threscollect) <- ccols
+    thresmaxmin <- matrix(NA,2,nccols)
+    rownames(thresmaxmin) <- c('max','min')
+    colnames(thresmaxmin) <- ccols
+    for (ccog in coglist) {
+      ccol_lab <- ccog
+      limvals <- c()
+      for (cstate in states) {
+        collect_lab <- paste0(cstate,'.',ccog)
+        cvals <- ccollector[,collect_lab]
+        clim <- cmaxmin[,collect_lab]
+        wholenames <- paste0(cstate,'_r',1:nroi)
+        threscollect[wholenames,ccol_lab] <- cvals
+        limvals <- c(limvals,clim)
       }
+      thresmaxmin['max',ccol_lab] <- max(limvals)
+      thresmaxmin['min',ccol_lab] <- min(limvals)
+    }
+    
+    #Generate path.
+    plotpath <- paste0(krrpath,'plots_detailed/covha_BH_TwoP/')
+    dir.create(plotpath,recursive=T)
+    
+    #For each cognitive version, plot corresponding versions.
+    for (ccog in coglist) {
       
-      #Collect values and max-min for comparisons.
-      ccols <- c()
-      for (ccog in coglist) {ccols <- c(ccols,ccog)}
-      nccols <- length(ccols)
-      threscollect <- matrix(NA,nfull,nccols)
-      rownames(threscollect) <- full_featlabs
-      colnames(threscollect) <- ccols
-      thresmaxmin <- matrix(NA,2,nccols)
-      rownames(thresmaxmin) <- c('max','min')
-      colnames(thresmaxmin) <- ccols
-      for (ccog in coglist) {
-        ccol_lab <- ccog
-        limvals <- c()
-        for (cstate in states) {
-          collect_lab <- paste0(cstate,'.',ccog)
-          cvals <- ccollector[,collect_lab]
-          clim <- cmaxmin[,collect_lab]
-          wholenames <- paste0(cstate,'_r',1:nroi)
-          threscollect[wholenames,ccol_lab] <- cvals
-          limvals <- c(limvals,clim)
-        }
-        thresmaxmin['max',ccol_lab] <- max(limvals)
-        thresmaxmin['min',ccol_lab] <- min(limvals)
-      }
-      
-      #Generate path.
-      plotpath <- paste0(krrpath,'plots_detailed/covha_BH_TwoP/')
-      dir.create(plotpath,recursive=T)
-      
-      #For each cognitive version, plot corresponding versions.
-      for (ccog in coglist) {
-        
-        #Raw feature.
-        score_thres <- threscollect[,ccog]
-        base_outfile <- paste0(plotpath,'covha_BH_TwoP_',ccog,'_',as.character(cq))
-        minscore <- thresmaxmin['min',ccog]
-        maxscore <- thresmaxmin['max',ccog]
-        max_plotter(score_thres,minscore,maxscore,base_outfile,
+      #Raw feature.
+      score_thres <- threscollect[,ccog]
+      base_outfile <- paste0(plotpath,'covha_BH_TwoP_',ccog,'_',as.character(cq))
+      minscore <- thresmaxmin['min',ccog]
+      maxscore <- thresmaxmin['max',ccog]
+      max_plotter(score_thres,minscore,maxscore,base_outfile,
+                  atlasord,base_atlas,nacolor,bcolor,xwidth,xheight,
+                  states,nstates,nroi,
+                  rbcolors,
+                  netlabels,netlist,nnet,netmat,netsum,netcolors,
+                  reglabels,reglist,nreg,regmat,regsum,regcolors)
+      unmax_plotter(score_thres,minscore,maxscore,base_outfile,
                     atlasord,base_atlas,nacolor,bcolor,xwidth,xheight,
                     states,nstates,nroi,
                     rbcolors,
                     netlabels,netlist,nnet,netmat,netsum,netcolors,
                     reglabels,reglist,nreg,regmat,regsum,regcolors)
-        unmax_plotter(score_thres,minscore,maxscore,base_outfile,
-                      atlasord,base_atlas,nacolor,bcolor,xwidth,xheight,
-                      states,nstates,nroi,
-                      rbcolors,
-                      netlabels,netlist,nnet,netmat,netsum,netcolors,
-                      reglabels,reglist,nreg,regmat,regsum,regcolors)
-        
-        #Generate legend for the raw.
-        ggobj <- rblegend(minscore,maxscore,atlasord,base_atlas) 
-        outfile <- paste0(base_outfile,'_legend.jpg')
-        ggsave(outfile,ggobj)
-      }
+      
+      #Generate legend for the raw.
+      ggobj <- rblegend(minscore,maxscore,atlasord,base_atlas) 
+      outfile <- paste0(base_outfile,'_legend.jpg')
+      ggsave(outfile,ggobj)
     }
   }
 }

@@ -57,8 +57,24 @@ sq_dmed(triu(true(nroi),1)) = sFCmat;
 sq_dmed = sq_dmed + sq_dmed.';
 sq_dmed = sq_dmed.*~eye(size(sq_dmed));
 
+%Threshold by group consistency with minimum spanning tree.
+if strcmp(threstype,'groupconsist_mst')
+
+    %Generate square CV matrix.
+    sq_mat = zeros(nroi,nroi);
+    sq_mat(triu(true(nroi),1)) = cv_med;
+    sq_cv = sq_mat + sq_mat.';
+
+    %Create MST and iteratively add back the smallest edges until target
+    %percentage reached.
+    sq_cv_th = thres_with_mst(sq_cv,pkeep);
+
+    %Threshold. 
+    th_dmed = sq_dmed;
+    th_dmed(sq_cv_th==0) = 0; 
+
 %Threshold by group consistency.
-if strcmp(threstype,'groupconsist')
+elseif strcmp(threstype,'groupconsist')
 
     %Generate square CV matrix.
     sq_mat = zeros(nroi,nroi);
