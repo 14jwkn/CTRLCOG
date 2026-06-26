@@ -533,13 +533,13 @@ if __name__ == '__main__':
 
     #Extract cognitive and continuous confounds for the batch.
     if septype == 'comCFAng':
-        coglist = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+        coglist = ['gCFA','P24_CR','PV']
     elif septype == 'comPCAng':
-        coglist = ['gPCA2','gFngPCA2','gCngPCA2']
+        coglist = ['gPCA']
     elif septype == 'comEFAng':
-        coglist = ['gEFA','gFngEFA','gCngEFA']
+        coglist = ['gEFA']
     elif septype == 'comNT':
-        coglist = ['NT','NF','NC','NFnNT','NCnNT']
+        coglist = ['NF','NC']
     ncog = len(coglist)
     cogmat = othercog.loc[:,coglist]
     othercont = othercog.loc[:,xother_cont]

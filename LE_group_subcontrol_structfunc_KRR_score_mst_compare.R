@@ -53,8 +53,8 @@ nopath <- paste0('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/',
 theme_set(theme_minimal())
 nk <- as.numeric(k)
 if (septype=='comCFAng') {
-  coglist <- c('gCFA','P24_CR','PV','gFngCFA','gCngCFA')
-  coglabs <- c('g','gF','gC','gF-g','gC-g')
+  coglist <- c('gCFA','P24_CR','PV')
+  coglabs <- c('g','gF','gC')
 }
 ncog <- length(coglist)
 if (statetype == 'SC_dFCcat') {

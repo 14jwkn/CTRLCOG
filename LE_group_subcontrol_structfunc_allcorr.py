@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Find the correlations between g, gF, gC, gF-g, and gC-g for the main estimate 
+Find the correlations between g, gF, and gC for the main estimate 
 with CFA. Also find the correlations for estimates based on EFA, PCA, and the NIH toolbox.
 Output:
 corrmethod+'_'+cset+'_cogcorr.csv' Correlations between a set of cognitive variables.
@@ -36,10 +36,10 @@ if __name__ == '__main__':
     #Cognitive correlations for main five cognitive variables and supplementary.
     cogsets = ['comCFAng','comEFAng','comPCAng','comNTng','comG']
     ncogsets = len(cogsets)
-    cogset_cog = [['gCFA','P24_CR','PV','gFngCFA','gCngCFA'],
-                  ['gEFA','P24_CR','PV','gFngEFA','gCngEFA'],
-                  ['gPCA','P24_CR','PV','gFngPCA','gCngPCA'],
-                  ['NT','NF','NC','NFnNT','NCnNT'],
+    cogset_cog = [['gCFA','P24_CR','PV'],
+                  ['gEFA','P24_CR','PV'],
+                  ['gPCA','P24_CR','PV'],
+                  ['NT','NF','NC'],
                   ['gCFA','gEFA','gPCA','NT']]
     for coidx in range(ncogsets):
         cset = cogsets[coidx]

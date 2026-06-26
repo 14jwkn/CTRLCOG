@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-For a given k for clustering, type of SC normalization, and type and percentage of thresholding, 
-illustrate the relationship between Haufe scores and controllability/principal cortical gradient using
-linear and quadratic regression lines and Pearson's and Spearman's correlation.
+For a given k for clustering, type of SC normalization, type and percentage of thresholding, 
+number of CV repetitions, inner k, outer k, analysis block, and number of permutations for the analysis, 
+illustrate the relationship between Haufe scores and controllability or strength/principal cortical gradient using
+scatter plots with the quadratic regression line, labelled with R2 and Spearman's correlation between Haufe scores 
+and controllability or strength, with FDR-corrected significance color-coded.
+
 Output:
-ccog+'_'+cctrl+'_'+cstate+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'.jpg' Scatterplot with linear regression line and Pearson's correlation labelled.
-quad_'+ccog+'_'+cctrl+'_'+cstate+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_covha_'+outlab+'.jpg' Scatterplot with quadratic regression line and Spearman's correlation labelled.
-cstatetype+'_'+septypeint+'_'+corrtype+'_covha_corr.csv' Pearson's or Spearman's correlations collected.
+ctrlpred_summary_plot.png Scatter plot with quadratic regression line and R2 and Spearman's correlation between Haufe scores and controllability or strength, with FDR-corrected significance color-coded.
+grad1pred_summary_plot.png Scatter plot with quadratic regression line and R2 and Spearman's correlation between Haufe scores and the principal gradient, with FDR-corrected significance color-coded.
 
 Usage: 
     LE_group_subcontrol_structfunc_KRR_maplook_plot.py <k> <sctype> <threstype> <thresval> <controltype> <statetype> <septype> <nrep> <inner_k> <outer_k> <wantblock> <wantperm>
@@ -36,10 +38,32 @@ from scipy.stats import spearmanr
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from matplotlib import pyplot as plt
+import matplotlib.lines as mlines
 from docopt import docopt
 
-#Reader for control and degree values.
-def control_reader(nk,nroi,basepath,scpath,sFCpath):
+#Quadratic regression.
+def quad_reg(cx,cy):
+   
+    #Generate squared term and add to model.
+    cx2 = cx**2
+    full_x = np.column_stack([cx2,cx])
+
+    #Fit model.
+    cmodel = LinearRegression().fit(full_x,cy)
+
+    #Extract coefficients and R2.
+    y_pred = cmodel.predict(full_x)
+    b2 = cmodel.coef_[0]
+    b1 = cmodel.coef_[1]
+    b0 = cmodel.intercept_
+    r2 = cmodel.score(full_x,cy)
+
+    #Return.
+    return (b2,b1,b0,r2)
+
+#Reader for control values.
+def control_reader(nk,nroi,
+                   basepath,scpath,sFCpath):
 
     #Read in the full Gramian error table to find states with errors.
     infile = (basepath+'/state_images/SC_sFC_dFC_gram.csv')
@@ -48,12 +72,12 @@ def control_reader(nk,nroi,basepath,scpath,sFCpath):
     gramstates = gramstates[np.squeeze((gramall!=0).values)].tolist()
     ngram = len(gramstates)
         
-    #Get FC AC, MC, and D.
+    #Get FC AC, MC, and AD.
     infile = (basepath+'ave_tab.csv')
     dFCave = pd.read_csv(infile,index_col=0,header=None)
     infile = (basepath+'mod_tab.csv')
     dFCmod = pd.read_csv(infile,index_col=0,header=None)
-    infile = (basepath+'deg_tab.csv')
+    infile = (basepath+'abs_deg_tab.csv')
     dFCdeg = pd.read_csv(infile,index_col=0,header=None)
 
     #Generate FC predictor labels.
@@ -118,7 +142,7 @@ def control_reader(nk,nroi,basepath,scpath,sFCpath):
     sFCave = pd.read_csv(infile,index_col=0,header=None)
     infile = (sFCpath+'mod_sFC.csv')
     sFCmod = pd.read_csv(infile,index_col=0,header=None)
-    infile = (sFCpath+'deg_sFC.csv')
+    infile = (sFCpath+'abs_deg_sFC.csv')
     sFCdeg = pd.read_csv(infile,index_col=0,header=None)
     predlabs = [('sFC_r'+str(ridx+1)) for ridx in range(nroi)]
     sFCave.columns = predlabs
@@ -146,8 +170,8 @@ def control_reader(nk,nroi,basepath,scpath,sFCpath):
     ctrl_collect = {}
     outmats = [scave,scmod,scdeg,
               sFCave,sFCmod,sFCdeg]
-    outkeys = ['ave.sc','mod.sc','deg.sc',
-               'ave.sFC','mod.sFC','deg.sFC']
+    outkeys = ['ave.sc','mod.sc','abs_deg.sc',
+               'ave.sFC','mod.sFC','abs_deg.sFC']
     nout = len(outkeys)
     for ouidx in range(nout):
         outkey = outkeys[ouidx]
@@ -156,7 +180,7 @@ def control_reader(nk,nroi,basepath,scpath,sFCpath):
    
     #Split multi-matrices into states.
     outmats = [dFCave,dFCmod,dFCdeg]
-    outctrls = ['ave','mod','deg']
+    outctrls = ['ave','mod','abs_deg']
     nout = len(outctrls)
     for cstate in [('s'+str(x+1)) for x in range(nk)]:
         for ouidx in range(nout):
@@ -171,10 +195,10 @@ def control_reader(nk,nroi,basepath,scpath,sFCpath):
     #Return each item.
     return (ctrl_collect)
 
-#Reader for prediction accuracy values and p-values.
-def predict_reader(basepath,nrep,inner_k,outer_k,
-                   sctype,ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes,
-                   pstatetypes,npstatetype,pseptypes,npseptype,pcog_septypes):
+#Reader for prediction values.
+def predict_reader(basepath,nrep,inner_k,outer_k,sctype,
+                   ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes,
+                   featver_list,nfeatver):
     
     #Produce predictive values for each model.
     pred_collect = {}
@@ -206,71 +230,30 @@ def predict_reader(basepath,nrep,inner_k,outer_k,
                 for cidx in range(cncog):
                     ccog = ccoglist[cidx]
                 
-                    #Read in the version and average across folds and repetitions.
-                    infile = (basepath+'KRRXFS/'+cctrl+'_'+cstatetype+'_'+cseptype+
-                                '_'+nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+
+                    #For each feature type.
+                    for fidx in range(nfeatver):
+                        cfeatver = featver_list[fidx]
+
+                        #Read in the version and average across folds and repetitions.
+                        infile = (basepath+'KRRXFS/'+cctrl+'_'+cstatetype+'_'+cseptype+
+                               nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+
                                 '/score_collect.h5')
-                    inkey = ('/rep_covha_feat_'+ccog)
-                    store = pd.HDFStore(infile,'r')
-                    inmat = store.select(inkey)
-                    store.close()
-                    inmat = inmat.mean(axis=0)
+                        inkey = ('/rep_'+cfeatver+'_feat_'+ccog)
+                        store = pd.HDFStore(infile,'r')
+                        inmat = store.select(inkey)
+                        store.close()
+                        inmat = inmat.mean(axis=0)
 
-                    #Split states.
-                    for cstate in csplits:
-                        cpred = inmat.index
-                        newpred = [x for x in cpred if cstate in x]
-                        outmat = inmat.loc[newpred]
-                        outkey = (cctrl+'.'+cstatetype+'.'+ccog+'.'+cstate)
-                        pred_collect[outkey] = outmat
-
-    #Produce predictive values for each model.
-    pval_collect = {}
-    for ctidx in range(nctrl):
-        cctrl = ctrltypes[ctidx]
-
-        #For each state type.
-        for stidx in range(npstatetype):
-            cstatetype = pstatetypes[stidx]
-
-            #Set split state list based on state type.
-            csplits = []
-            if 'SC' in cstatetype:
-                csplits = csplits + ['sc']
-            if 'sFC' in cstatetype:
-                csplits = csplits + ['sFC']
-            if 'dFC' in cstatetype:
-                csplits = csplits + [('s'+str(x+1)) for x in range(nk)]
-
-            #For each cognitive set.
-            for csidx in range(npseptype):
-                cseptype = pseptypes[csidx]
-
-                #Set cognitive list based on cognitive set.
-                ccoglist = pcog_septypes[csidx]
-                cncog = len(ccoglist)
-
-                #For each cognitive variable.
-                for cidx in range(cncog):
-                    ccog = ccoglist[cidx]
-                
-                    #Read in the version.
-                    inpath = (basepath+'KRRXFS/controlcomp_statecomp_cogcomp'+
-                                '_'+nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+'/')
-                    infile = (inpath+cctrl+'_'+cstatetype+'_'+cseptype+'_TwoP_BHFDR_covha_feat.csv')
-                    inmat = pd.read_csv(infile,index_col=0)
-                    inmat = inmat.loc[:,ccog]
-                    
-                    #Split states.
-                    for cstate in csplits:
-                        cpred = inmat.index
-                        newpred = [x for x in cpred if cstate in x]
-                        outmat = inmat.loc[newpred]
-                        outkey = (cctrl+'.'+cstatetype+'.'+ccog+'.'+cstate)
-                        pval_collect[outkey] = outmat < 0.05
+                        #Split states.
+                        for cstate in csplits:
+                            cpred = inmat.index
+                            newpred = [x for x in cpred if cstate in x]
+                            outmat = inmat.loc[newpred]
+                            outkey = (cctrl+'.'+cstatetype+'.'+ccog+'.'+cfeatver+'.'+cstate)
+                            pred_collect[outkey] = outmat
     
     #Return each item.
-    return (pred_collect,pval_collect)
+    return pred_collect
 
 if __name__ == '__main__':
     __spec__ = None
@@ -281,19 +264,18 @@ if __name__ == '__main__':
     sctype = args['<sctype>']
     threstype = args['<threstype>']
     thresval = args['<thresval>']
-    controltype = args['<controltype>']
-    statetype = args['<statetype>']
-    septype = args['<septype>']
     nrep = args['<nrep>']
     inner_k = args['<inner_k>']
     outer_k = args['<outer_k>']
     wantblock = args['<wantblock>']
     wantperm = args['<wantperm>']
     print('Doing:',k,sctype,threstype,thresval,
-          controltype,statetype,septype,
           nrep,inner_k,outer_k,wantblock,wantperm)
     
     #Set paths.
+    controltype = 'controlcomp'
+    statetype = 'statecomp'
+    septype = 'cogcomp'
     subgroup = 'full'
     sc_subgroup = 'dr_full'
     basepath = ('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/'+
@@ -303,8 +285,7 @@ if __name__ == '__main__':
     sFCpath = ('../outputs/r_sFC/'+
                 sc_subgroup+'/'+threstype+'/'+thresval+'/')
     explorepath = (basepath+'KRRXFS/'+controltype+'_'+statetype+'_'+septype+'_'+
-                  nrep+'_'+inner_k+
-                  '_'+outer_k+'_'+sctype+'/correxplore/plot/')
+                  nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+'/correxplore/TwoP_FDR/specialp/')
     os.makedirs(explorepath,exist_ok=True)
     
     #Initialize basic values.
@@ -317,6 +298,10 @@ if __name__ == '__main__':
         sublist = [label.rstrip() for label in f] 
     sublist = list(map(int,sublist))
     nsub = len(sublist)
+    featver_list = ['covha']
+    nfeatver = len(featver_list)
+    predtype_list = ['full']
+    npredtype = len(predtype_list)
     full_statesplits = ['sc','sFC'] + [('s'+str(x+1)) for x in range(nk)]
 
     #Set types of interest to be compared.
@@ -326,7 +311,7 @@ if __name__ == '__main__':
     nmult = len(multstates)
     statetypes = singstates + multstates
     nstatetype = len(statetypes)
-    ctrltypes = ['ave','mod']
+    ctrltypes = ['ave','mod','abs_deg']
     nctrl = len(ctrltypes)
     septypes = ['comCFAng']
     nseptype = len(septypes)
@@ -353,13 +338,14 @@ if __name__ == '__main__':
                                   basepath,scpath,sFCpath)
     
     #Read in predictive values.
-    (pred_collect,pval_collect) = predict_reader(basepath,nrep,inner_k,outer_k,sctype,
-                                                ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes)
+    pred_collect = predict_reader(basepath,nrep,inner_k,outer_k,sctype,
+                                ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes,
+                                featver_list,nfeatver)
     
     #Read in gradient values.
-    infile = ('../outputs/r_sFC/unclean/both/whole/dr_full/none/0/sFC_gradients.csv')
+    infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients.csv')
     sFCgr_all = pd.read_csv(infile,header=None)
-    infile = ('../outputs/r_sFC/unclean/both/whole/dr_full/none/0/sFC_gradients_flip.csv')
+    infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients_flip.csv')
     sFCgr_flip = pd.read_csv(infile,header=None).values.tolist()[0]
     ngr = len(sFCgr_flip)
     for gidx in range(ngr):
@@ -371,7 +357,6 @@ if __name__ == '__main__':
     print('Control-predictiveness relationship.')
     outlab = 'ctrlpred'
     outpath = (explorepath+outlab)
-    os.makedirs(outpath,exist_ok=True)
 
     #Set up.
     cstatetype = 'SC_dFCcat'
@@ -384,127 +369,149 @@ if __name__ == '__main__':
         csplits = csplits + [('s'+str(x+1)) for x in range(nk)]
     nsplit = len(csplits)
     septypeint = 'comCFAng'
-    cogint = ['gCFA','P24_CR','PV']
+    cogint = ['PV','P24_CR','gCFA']
     ncogint = len(cogint)
 
-    #Set up to save correlations.
-    pr_corrsave_all = []
-    sp_corrsave_all = []
-    corrsave_labs = []
+    # Generate row-column combos.
+    row_combos = []
     for ccog in cogint:
-
-        #Set control types of interest for the cognitive variable.
-        if ccog=='gCFA':
-            c_ctrltypes = ['ave','mod']
-        elif ccog=='P24_CR':
-            c_ctrltypes = ['mod']
-        elif ccog=='PV':
+        if ccog == 'gCFA':
+            c_ctrltypes = ['ave', 'mod', 'abs_deg']
+        elif ccog == 'PV':
             c_ctrltypes = ['ave']
-
-        #Do comparisons.
+        elif ccog == 'P24_CR':
+            c_ctrltypes = ['mod']
         for cctrl in c_ctrltypes:
+            row_combos.append((ccog, cctrl))
+    nrows = len(row_combos)     
+    ncols = len(csplits)     
 
-            #Set up to save correlations.
-            corrsave_labs.append(ccog+' '+cctrl)
-            pr_corrsave = []
-            sp_corrsave = []
+    # Gather scatter plots.
+    fig, axes = plt.subplots(nrows,ncols,figsize=(3*ncols,3*nrows),squeeze=False)
+    for row_idx,(ccog,cctrl) in enumerate(row_combos):
 
-            #Do each state.
-            for cstate in csplits:
+        # Convert to labels.
+        if ccog == 'gCFA':
+            ccog_lab = 'g'
+        elif ccog == 'P24_CR':
+            ccog_lab = 'gF'
+        elif ccog == 'PV':
+            ccog_lab = 'gC'
+        if cctrl == 'ave':
+            cctrl_lab = 'Average Controllability'
+        elif cctrl == 'mod':
+            cctrl_lab = 'Modal Controllability'
+        elif cctrl == 'abs_deg':
+            cctrl_lab = 'Strength'
+            
+        # Read quadratic regression and Spearman's correlation values.
+        infile = (outpath+'/full/full_'+cctrl+'_'+cstatetype+
+                '_comCFAng_covha_ctrlpred_'+ccog+'_summary.csv')
+        inmat = pd.read_csv(infile,index_col=0)
 
-                #Index predictiveness.
-                inkey = (cctrl+'.'+cstatetype+'.'+ccog+'.'+cstate)
-                cpred = pred_collect[inkey]
-                
-                #Requires full 360 regions. For predictiveness, replace with 0 for zero predictiveness.
-                cpred_full = pd.Series(np.zeros(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
-                cpred_full[cpred.index] = cpred
-                
-                #Index comparator, generate group-average.
-                inkey = (cctrl+'.'+cstate)
-                cmat = ctrl_collect[inkey].mean()
+        # Split into states.
+        for col_idx,cstate in enumerate(csplits):
 
-                #Requires full 360 regions. For control, replace with 1 for what the error value was.
-                cmat_full = pd.Series(np.ones(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
-                cmat_full[cmat.index] = cmat
-                
-                #Combine.
-                fullmat = pd.concat((cpred_full,cmat_full),axis=1)
-                fullmat.columns = ['Predictive Score','Controllability']
-                cX = fullmat.iloc[:,0]
-                cY = fullmat.iloc[:,1]
+            # Select cell for plot.
+            ax = axes[row_idx,col_idx]   
 
-                #Generate Pearson's correlation.
-                pr_corr = pearsonr(cX,cY).statistic
-                corr_r = round(pr_corr,2)
-                if corr_r == 0:
-                    corr_r = 0
-                
-                #Add.
-                pr_corrsave.append(corr_r)
-                
-                #Plot scatterplot.
-                plt.scatter(cX,cY,s=2)
-                plt.axvline(x=0,color='red',linestyle='--', linewidth=1)
-                plt.xlabel(fullmat.columns[0])
-                plt.ylabel(fullmat.columns[1])
-                plt.title((ccog+' '+cctrl+' '+cstate+' | r = '+str(corr_r)),loc='right')
+            # Get QR R2, QR R2 P, SP, SP P.
+            cr2 = round(inmat.loc[cstate,'R2'],2)
+            if (inmat.loc[cstate,'R2_P'] < 0.05):
+                cr2_sig = '*'
+            else:
+                cr2_sig = ''
+            csp = round(inmat.loc[cstate,'SP'],2)
+            if (inmat.loc[cstate,'SP_P'] < 0.05):
+                csp_sig = '*'
+            else:
+                csp_sig = ''
+            
+            # Turn title a color based on significance and sign.
+            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
+                title_cl = '#FF0000'
+            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
+                title_cl = '#00A2FF'
+            elif (cr2_sig=='*') and (csp_sig!='*'):
+                title_cl = '#097969'
+            elif (cr2_sig!='*') and (csp_sig=='*'):
+                title_cl = '#FFAA33'
+            else:
+                title_cl = 'black'
+           
+            # Get predictive score.
+            inkey = (cctrl + '.' + cstatetype + '.' + ccog + '.covha.' + cstate)
+            cpred = pred_collect[inkey]
+            cpred_full = pd.Series(np.zeros(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
+            cpred_full[cpred.index] = cpred
 
-                #Save.
-                corrtype = 'pearson'
-                outfile = (outpath+'/'+ccog+'_'+cctrl+'_'+cstate+'_'+
-                        cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'.jpg')
-                plt.savefig(outfile,bbox_inches='tight',dpi=360)  
-                plt.close()
+            # Get controllability.
+            inkey = (cctrl + '.' + cstate)
+            cmat = ctrl_collect[inkey].mean()
+            cmat_full = pd.Series(np.ones(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
+            cmat_full[cmat.index] = cmat
 
-                #Do quadratic regression.
-                beta = np.polyfit(cX,cY,deg=2)
-                line_cX = np.linspace(min(cX),max(cX),100)
-                line_cY = np.polyval(beta,line_cX)
+            # Concatenate and format.
+            fullmat = pd.concat((cpred_full, cmat_full), axis=1)
+            fullmat.columns = ['Predictive Score', 'Controllability']
+            cX = fullmat.iloc[:,0]
+            cY = fullmat.iloc[:,1]
 
-                #Generate Spearman's correlation.
-                sp_corr = spearmanr(cX,cY).statistic
-                corr_r = round(sp_corr,2)
-                if corr_r == 0:
-                    corr_r = 0
-                
-                #Add.
-                sp_corrsave.append(corr_r)
-                
-                #Plot scatterplot.
-                plt.scatter(cX,cY,s=2)
-                plt.axvline(x=0,color='red',linestyle='--', linewidth=1)
-                plt.plot(line_cX,line_cY,color='green')
-                plt.xlabel(fullmat.columns[0])
-                plt.ylabel(fullmat.columns[1])
-                plt.title((ccog+' '+cctrl+' '+cstate+' | SP r = '+str(corr_r)),loc='right')
+            # Quadratic regression.
+            beta = np.polyfit(cX, cY, deg=2)
+            line_cX = np.linspace(min(cX), max(cX), 100)
+            line_cY = np.polyval(beta, line_cX)
 
-                #Save.
-                corrtype = 'spearman'
-                outfile = (outpath+'/quad_'+ccog+'_'+cctrl+'_'+cstate+'_'+
-                        cstatetype+'_'+septypeint+'_'+corrtype+'_covha_'+outlab+'.jpg')
-                plt.savefig(outfile,bbox_inches='tight',dpi=360)  
-                plt.close()
+            # Plot scatter plot with values labelled.
+            ax.scatter(cX,cY,s=2)
+            ax.axvline(x=0, color='red', linestyle='--', linewidth=1)
+            ax.plot(line_cX, line_cY, color='green')
+            if cstate == 's3':
+                xlab_out = f'{cctrl_lab} Regional Importance for Predicting {ccog_lab}'
+            else:
+                xlab_out = ''
+            if cstate == 'sc':
+                ylab_out = f'{cctrl_lab}'
+            else:
+                ylab_out = ''
+            ax.set_xlabel(xlab_out)
+            ax.set_ylabel(ylab_out)
+            ax.set_title(
+                f'{cstate.upper()} | QR R²={cr2}{cr2_sig} | RHO={csp}{csp_sig}',
+                fontsize=10,loc='left',color=title_cl)
 
-            #Add.
-            pr_corrsave_all.append(pr_corrsave)
-            sp_corrsave_all.append(sp_corrsave)
-    
-    #Format and save.
-    corrtype = 'pearson'
-    corrsave_out = pd.DataFrame(pr_corrsave_all,index=corrsave_labs,columns=csplits)
-    outfile = (outpath+'/'+cstatetype+'_'+septypeint+'_'+corrtype+'_covha_corr.csv')
-    corrsave_out.to_csv(outfile,index=True,header=True)
-    corrtype = 'spearman'
-    corrsave_out = pd.DataFrame(sp_corrsave_all,index=corrsave_labs,columns=csplits)
-    outfile = (outpath+'/'+cstatetype+'_'+septypeint+'_'+corrtype+'_covha_corr.csv')
-    corrsave_out.to_csv(outfile,index=True,header=True)
-    
+    # Draw a single line between the row above g, shift other plots down.
+    plt.tight_layout()
+    for i, (ccog, cctrl) in enumerate(row_combos):
+        if ccog == 'gCFA':
+            gCFA_start_row = i
+            break
+    gap = 0.03  
+    for row_idx in range(gCFA_start_row, nrows):
+        for col_idx in range(ncols):
+            ax = axes[row_idx, col_idx]
+            pos = ax.get_position()
+            ax.set_position([pos.x0, pos.y0 - gap, pos.width, pos.height])
+    ax_above = axes[gCFA_start_row - 1, 0]
+    ax_below = axes[gCFA_start_row, 0]
+    y_above = ax_above.get_position().y0
+    y_below = ax_below.get_position().y1
+    y_mid = (y_above + y_below) / 2
+    line = mlines.Line2D(
+        [0.01, 0.99], [y_mid, y_mid],
+        transform=fig.transFigure,
+        color='black', linewidth=1.5, linestyle='-'
+    )
+    fig.add_artist(line)
+
+    # Save.
+    plt.savefig((outpath+'/ctrlpred_summary_plot.png'),dpi=1080,bbox_inches='tight')
+    plt.close()
+
     #Do sFC gradient 1 relationship with predictiveness.
     print('sFC gradient 1-predictiveness relationship.')
     outlab = 'grad1pred'
     outpath = (explorepath+outlab)
-    os.makedirs(outpath,exist_ok=True)
 
     #Set up.
     cstatetype = 'SC_dFCcat'
@@ -521,113 +528,120 @@ if __name__ == '__main__':
     ncogint = len(cogint)
     sFCgr = sFCgr_all.iloc[:,0]
 
-    #Set up to save correlations.
-    pr_corrsave_all = []
-    sp_corrsave_all = []
-    corrsave_labs = []
-    for ccog in cogint:
+    # Generate row-column combos.
+    row_combos = []
+    if ccog == 'gCFA':
+        c_ctrltypes = ['ave', 'mod', 'abs_deg']
+    for cctrl in c_ctrltypes:
+        row_combos.append((ccog, cctrl))
+    nrows = len(row_combos)     
+    ncols = len(csplits)     
 
-        #Set control types of interest for the cognitive variable.
-        if ccog=='gCFA':
-            c_ctrltypes = ['ave','mod']
-        elif ccog=='P24_CR':
-            c_ctrltypes = ['mod']
-        elif ccog=='PV':
-            c_ctrltypes = ['ave']
+    # Gather scatter plots.
+    fig, axes = plt.subplots(nrows,ncols,figsize=(3*ncols,3*nrows),squeeze=False)
+    for row_idx,(ccog,cctrl) in enumerate(row_combos):
 
-        #Do comparisons.
-        for cctrl in c_ctrltypes:
+        # Convert to labels.
+        if ccog == 'gCFA':
+            ccog_lab = 'g'
+        if cctrl == 'ave':
+            cctrl_lab = 'Average Controllability'
+        elif cctrl == 'mod':
+            cctrl_lab = 'Modal Controllability'
+        elif cctrl == 'abs_deg':
+            cctrl_lab = 'Strength'
+            
+        # Read quadratic regression and Spearman's correlation values.
+        infile = (outpath+'/full/full_'+cctrl+'_'+cstatetype+
+                '_comCFAng_covha_grad1pred_'+ccog+'_summary.csv')
+        inmat = pd.read_csv(infile,index_col=0)
 
-            #Set up to save correlations.
-            corrsave_labs.append(ccog+' '+cctrl)
-            pr_corrsave = []
-            sp_corrsave = []
+        # Split into states.
+        for col_idx,cstate in enumerate(csplits):
 
-            #Do each state.
-            for cstate in csplits:
+            # Select cell for plot.
+            ax = axes[row_idx,col_idx]   
 
-                #Index predictiveness.
-                inkey = (cctrl+'.'+cstatetype+'.'+ccog+'.'+cstate)
-                cpred = pred_collect[inkey]
-                
-                #Requires full 360 regions. For predictiveness, replace with 0 for zero predictiveness.
-                cpred_full = pd.Series(np.zeros(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
-                cpred_full[cpred.index] = cpred
+            # Get QR R2, QR R2 P, SP, SP P.
+            cr2 = round(inmat.loc[cstate,'R2'],2)
+            if (inmat.loc[cstate,'R2_P'] < 0.05):
+                cr2_sig = '*'
+            else:
+                cr2_sig = ''
+            csp = round(inmat.loc[cstate,'SP'],2)
+            if (inmat.loc[cstate,'SP_P'] < 0.05):
+                csp_sig = '*'
+            else:
+                csp_sig = ''
+            
+            # Turn title a color based on significance and sign.
+            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
+                title_cl = '#FF0000'
+            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
+                title_cl = '#00A2FF'
+            elif (cr2_sig=='*') and (csp_sig!='*'):
+                title_cl = '#097969'
+            elif (cr2_sig!='*') and (csp_sig=='*'):
+                title_cl = "#FFAA33"
+            else:
+                title_cl = 'black'
+            
+            # Get regional importances.
+            inkey = (cctrl+'.'+cstatetype+'.'+ccog+'.covha.'+cstate)
+            cpred = pred_collect[inkey]
+            
+            #Requires full 360 regions. For predictiveness, replace with 0 for zero predictiveness.
+            cpred_full = pd.Series(np.zeros(nroi),index=[(cstate+'_r'+str(x+1)) for x in range(nroi)])
+            cpred_full[cpred.index] = cpred
 
-                #Index comparator. Get all original values.
-                cmat = sFCgr.copy()
-                cmat.index = [(cstate+'_'+x) for x in cmat.index]
-                cmat_full = cmat
-                
-                #Combine.
-                fullmat = pd.concat((cpred_full,cmat_full),axis=1)
-                fullmat.columns = ['Predictive Score','Gradient 1']
-                cX = fullmat.iloc[:,0]
-                cY = fullmat.iloc[:,1]
+            #Index comparator. Get all original values.
+            cmat = sFCgr.copy()
+            cmat.index = [(cstate+'_'+x) for x in cmat.index]
+            cmat_full = cmat
+            
+            #Combine.
+            fullmat = pd.concat((cpred_full,cmat_full),axis=1)
+            fullmat.columns = ['Predictive Score','Gradient 1']
+            cX = fullmat.iloc[:,0]
+            cY = fullmat.iloc[:,1]
 
-                #Generate Pearson's correlation.
-                pr_corr = pearsonr(cX,cY).statistic
-                corr_r = round(pr_corr,2)
-                if corr_r == 0:
-                    corr_r = 0
-                
-                #Add.
-                pr_corrsave.append(corr_r)
-                
-                #Plot scatterplot.
-                plt.scatter(cX,cY,s=2)
-                plt.axvline(x=0,color='red',linestyle='--', linewidth=1)
-                plt.xlabel(fullmat.columns[0])
-                plt.ylabel(fullmat.columns[1])
-                plt.title((ccog+' '+cctrl+' '+cstate+' | r = '+str(corr_r)),loc='right')
+            # Quadratic regression.
+            beta = np.polyfit(cX, cY, deg=2)
+            line_cX = np.linspace(min(cX), max(cX), 100)
+            line_cY = np.polyval(beta, line_cX)
 
-                #Save.
-                corrtype = 'pearson'
-                outfile = (outpath+'/'+ccog+'_'+cctrl+'_'+cstate+'_'+
-                        cstatetype+'_'+septypeint+'_'+corrtype+'_covha_'+outlab+'.jpg')
-                plt.savefig(outfile,bbox_inches='tight',dpi=360)  
-                plt.close()
+            # Plot scatter plot with values labelled.
+            ax.scatter(cX,cY,s=2)
+            ax.axvline(x=0, color='red', linestyle='--', linewidth=1)
+            ax.plot(line_cX, line_cY, color='green')
+            if cstate == 's3':
+                xlab_out = f'{cctrl_lab} Regional Importance for Predicting {ccog_lab}'
+            else:
+                xlab_out = ''
+            if cstate == 'sc':
+                ylab_out = f'Principal Gradient'
+            else:
+                ylab_out = ''
+            ax.set_xlabel(xlab_out)
+            ax.set_ylabel(ylab_out)
+            ax.set_title(
+                f'{cstate.upper()} | QR R²={cr2}{cr2_sig} | RHO={csp}{csp_sig}',
+                fontsize=10,loc='left',color=title_cl)
 
-                #Do quadratic regression.
-                beta = np.polyfit(cX,cY,deg=2)
-                line_cX = np.linspace(min(cX),max(cX),100)
-                line_cY = np.polyval(beta,line_cX)
-
-                #Generate Spearman's correlation.
-                sp_corr = spearmanr(cX,cY).statistic
-                corr_r = round(sp_corr,2)
-                if corr_r == 0:
-                    corr_r = 0
-                
-                #Add.
-                sp_corrsave.append(corr_r)
-                
-                #Plot scatterplot.
-                plt.scatter(cX,cY,s=2)
-                plt.axvline(x=0,color='red',linestyle='--', linewidth=1)
-                plt.plot(line_cX,line_cY,color='green')
-                plt.xlabel(fullmat.columns[0])
-                plt.ylabel(fullmat.columns[1])
-                plt.title((ccog+' '+cctrl+' '+cstate+' | SP r = '+str(corr_r)),loc='right')
-
-                #Save.
-                corrtype = 'spearman'
-                outfile = (outpath+'/quad_'+ccog+'_'+cctrl+'_'+cstate+'_'+
-                        cstatetype+'_'+septypeint+'_'+corrtype+'_covha_'+outlab+'.jpg')
-                plt.savefig(outfile,bbox_inches='tight',dpi=360)  
-                plt.close()
-
-            #Add.
-            pr_corrsave_all.append(pr_corrsave)
-            sp_corrsave_all.append(sp_corrsave)
-    
-    #Format and save.
-    corrtype = 'pearson'
-    corrsave_out = pd.DataFrame(pr_corrsave_all,index=corrsave_labs,columns=csplits)
-    outfile = (outpath+'/'+cstatetype+'_'+septypeint+'_'+corrtype+'_covha_corr.csv')
-    corrsave_out.to_csv(outfile,index=True,header=True)
-    corrtype = 'spearman'
-    corrsave_out = pd.DataFrame(sp_corrsave_all,index=corrsave_labs,columns=csplits)
-    outfile = (outpath+'/'+cstatetype+'_'+septypeint+'_'+corrtype+'_covha_corr.csv')
-    corrsave_out.to_csv(outfile,index=True,header=True)
+    # Shift plots down.
+    plt.tight_layout()
+    for i, (ccog, cctrl) in enumerate(row_combos):
+        if ccog == 'gCFA':
+            gCFA_start_row = i
+            break
+    gap = 0.03  
+    for row_idx in range(gCFA_start_row, nrows):
+        for col_idx in range(ncols):
+            ax = axes[row_idx, col_idx]
+            pos = ax.get_position()
+            ax.set_position([pos.x0, pos.y0 - gap, pos.width, pos.height])
+            
+    # Save.
+    plt.savefig((outpath+'/grad1pred_summary_plot.png'),dpi=1080,bbox_inches='tight')
+    plt.close()
     print('Exploration done.')

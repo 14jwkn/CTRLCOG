@@ -1,25 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-For a given k for clustering, type of SC normalization, and type and percentage of thresholding, 
+For a given k for clustering, type of SC normalization, type and percentage of thresholding, 
+number of CV repetitions, inner k, outer k, analysis block, and number of permutations for the analysis,
 find Dice coefficients between significant Haufe scores and PFIT/MD maps. Generate p-values
 for Dice coefficients using permutation. Find Spearman's correlation to quantify the relationship
 and R2 for quadratic regression to quantify the statistical relationship between Haufe scores and 
-controllability/principal cortical gradient. Generate p-values for the R2.
+controllability/principal cortical gradient. Generate p-values for the Spearman's correlation and R2.
 
 Output:
 'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha.csv' Dice coefficient between significant Haufe scores and PFIT/MD maps.
 'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_pval.csv' p-values for Dice coefficient between significant Haufe scores and PFIT/MD maps.
-'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_round.csv' Dice coefficient between significant Haufe scores and PFIT/MD maps rounded.
-'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_pthres.csv' Dice coefficient between significant Haufe scores and PFIT/MD maps rounded and thresholded for significance.
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'.csv' Spearman correlation between Haufe scores and controllability/principal cortical gradient.
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_round.csv' Spearman correlation between Haufe scores and controllability/principal cortical gradient rounded.
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'.csv' R2 for quadratic regression between Haufe scores and controllability/principal cortical gradient.
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv' p-value for R2 for quadratic regression between Haufe scores and controllability/principal cortical gradient.
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_round.csv' R2 for quadratic regression between Haufe scores and controllability/principal cortical gradient rounded. 
-cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pthres.csv' R2 for quadratic regression between Haufe scores and controllability/principal cortical gradient rounded and thresholded for significance. 
+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'.csv' Spearman's correlation/R2 for quadratic regression between Haufe scores and controllability or strength/principal cortical gradient.
+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv' p-value for Spearman's correlation/R2 for quadratic regression between Haufe scores and controllability or strength/principal cortical gradient.
 
 Usage: 
-    LE_group_subcontrol_structfunc_KRR_maplook.py <k> <sctype> <threstype> <thresval> <controltype> <statetype> <septype> <nrep> <inner_k> <outer_k> <wantblock> <wantperm>
+    LE_group_subcontrol_structfunc_KRR_maplook.py <k> <sctype> <threstype> <thresval> <nrep> <inner_k> <outer_k> <wantblock> <wantperm>
     
 Arguments:
     
@@ -27,9 +22,6 @@ Arguments:
     <sctype> SC type of normalization
     <threstype> Threshold type
     <thresval> Threshold value
-    <controltype> What control types are used
-    <statetype> What statetypes are used
-    <septype> What cognitive separation types are used
     <nrep> Number of CV repetitions
     <inner_k> Inner K in K-fold CV hyperparameter search
     <outer_k> Outer K in K-fold CV
@@ -426,19 +418,18 @@ if __name__ == '__main__':
     sctype = args['<sctype>']
     threstype = args['<threstype>']
     thresval = args['<thresval>']
-    controltype = args['<controltype>']
-    statetype = args['<statetype>']
-    septype = args['<septype>']
     nrep = args['<nrep>']
     inner_k = args['<inner_k>']
     outer_k = args['<outer_k>']
     wantblock = args['<wantblock>']
     wantperm = args['<wantperm>']
     print('Doing:',k,sctype,threstype,thresval,
-          controltype,statetype,septype,
           nrep,inner_k,outer_k,wantblock,wantperm)
 
     #Set paths.
+    controltype = 'controlcomp'
+    statetype = 'statecomp'
+    septype = 'cogcomp'
     subgroup = 'full'
     sc_subgroup = 'dr_full'
     basepath = ('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/'+
@@ -467,11 +458,11 @@ if __name__ == '__main__':
     #Set types of interest to be compared.
     statetypes = ['SC_dFCcat']
     nstatetype = len(statetypes)
-    ctrltypes = ['ave','mod']
+    ctrltypes = ['ave','mod','abs_deg']
     nctrl = len(ctrltypes)
     septypes = ['comCFAng']
     nseptype = len(septypes)
-    cog_septypes = [['gCFA']]
+    cog_septypes = [['gCFA','P24_CR','PV']]
     coglist = sum(cog_septypes,[])
     ncog = len(coglist)
 
@@ -480,7 +471,7 @@ if __name__ == '__main__':
     npstatetype = len(pstatetypes)
     pseptypes = ['comCFAng']
     npseptype = len(pseptypes)
-    pcog_septypes = [['gCFA','P24_CR','PV','gFngCFA','gCngCFA']]
+    pcog_septypes = [['gCFA','P24_CR','PV']]
     pcoglist = sum(pcog_septypes,[])
     pncog = len(pcoglist)
 
@@ -522,9 +513,9 @@ if __name__ == '__main__':
                                                 pstatetypes,npstatetype,pseptypes,npseptype,pcog_septypes)
 
     #Read in gradient values and flip to desired sign.
-    infile = ('../outputs/r_sFC/unclean/both/whole/dr_full/none/0/sFC_gradients.csv')
+    infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients.csv')
     sFCgr_all = pd.read_csv(infile,header=None)
-    infile = ('../outputs/r_sFC/unclean/both/whole/dr_full/none/0/sFC_gradients_flip.csv')
+    infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients_flip.csv')
     sFCgr_flip = pd.read_csv(infile,header=None).values.tolist()[0]
     ngr = len(sFCgr_flip)
     for gidx in range(ngr):
@@ -599,7 +590,7 @@ if __name__ == '__main__':
                         cdicep = dice_perm(cdice,ccomp,ccomp2,pset)
                         fulldc_p.loc[cstate,carea] = cdicep
 
-                #Round, threshold, and save.
+                #Threshold and save.
                 fulldc_r = round(fulldc,2)
                 fulldc_t = fulldc_r.copy()
                 fulldc_t[fulldc_p>=0.05] = np.nan
@@ -607,10 +598,6 @@ if __name__ == '__main__':
                 fulldc.to_csv(outfile)
                 outfile = (outpath+'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_pval.csv')
                 fulldc_p.to_csv(outfile)
-                outfile = (outpath+'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_round.csv')
-                fulldc_r.to_csv(outfile)
-                outfile = (outpath+'dc_'+cctrl+'_'+cstatetype+'_'+ccog+'_covha_pthres.csv')
-                fulldc_t.to_csv(outfile)
 
     #Do group-average controllability relationship with predictiveness.
     if wantblock == 'ctrlpred':
@@ -630,7 +617,7 @@ if __name__ == '__main__':
             csplits = csplits + [('s'+str(x+1)) for x in range(nk)]
         nsplit = len(csplits)
         septypeint = 'comCFAng'
-        cogint = ['gCFA']
+        cogint = ['gCFA','P24_CR','PV']
         ncogint = len(cogint)
 
         #Read.
@@ -638,8 +625,8 @@ if __name__ == '__main__':
             for cctrl in ctrltypes:
 
                 #Do comparisons.
-                fullcorr = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullcorr_r = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
+                fullcorr_r_p = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullquad_r2 = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullquad_r2_p = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 pdats = []
@@ -675,11 +662,12 @@ if __name__ == '__main__':
 
                             #Correlate.
                             ccorr = spearmanr(fullmat.iloc[:,0],fullmat.iloc[:,1]).statistic
-                            ccorr_r = round(ccorr,2)
+                            cpval, cpdist = spin_test(fullmat.iloc[:,0],fullmat.iloc[:,1],surface_name='fsa5',parcellation_name='glasser_360',
+                                                            type=corrtype,n_rot=nspecialp,null_dist=True)
                             
-                            #Add.  
-                            fullcorr.loc[cstate,ccog] = ccorr
-                            fullcorr_r.loc[cstate,ccog] = ccorr_r
+                            #Add.
+                            fullcorr_r.loc[cstate,ccog] = ccorr
+                            fullcorr_r_p.loc[cstate,ccog] = cpval
 
                         #If doing quadratic regression.
                         elif (corrtype == 'quadreg'):
@@ -703,11 +691,16 @@ if __name__ == '__main__':
                 #Save correlation.
                 if (corrtype == 'spearman'):
 
-                    #Save values and rounded values.
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'.csv')
-                    fullcorr.T.to_csv(outfile)
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_round.csv')
-                    fullcorr_r.T.to_csv(outfile)
+                    #Extract.
+                    outmat = fullcorr_r
+                    outmat_p = fullcorr_r_p
+                    outlist_lab = 'r'
+
+                    #Save matrix and p values.
+                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'.csv')
+                    outmat.T.to_csv(outfile)
+                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv')
+                    outmat_p.T.to_csv(outfile)
                     
                 #Save quadratic regression.
                 elif (corrtype=='quadreg'):
@@ -722,15 +715,6 @@ if __name__ == '__main__':
                     outmat.T.to_csv(outfile)
                     outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv')
                     outmat_p.T.to_csv(outfile)
-
-                    #Save rounded and thresholded values.
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_round.csv')
-                    outmat_ro = round(outmat,2)
-                    outmat_ro.T.to_csv(outfile)
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pthres.csv')
-                    outmat_th = outmat_ro.copy()
-                    outmat_th[outmat_p >= 0.05] = np.nan
-                    outmat_th.T.to_csv(outfile)
 
     #Do sFC gradient 1 relationship with predictiveness.
     if wantblock == 'grad1pred':
@@ -759,8 +743,8 @@ if __name__ == '__main__':
             for cctrl in ctrltypes:
 
                 #Do comparisons.
-                fullcorr = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullcorr_r = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
+                fullcorr_r_p = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullquad_r2 = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 fullquad_r2_p = pd.DataFrame(np.zeros((nsplit,ncogint)),index=csplits,columns=cogint)
                 pdats = []
@@ -792,11 +776,12 @@ if __name__ == '__main__':
 
                             #Correlate.
                             ccorr = spearmanr(fullmat.iloc[:,0],fullmat.iloc[:,1]).statistic
-                            ccorr_r = round(ccorr,2)
+                            cpval, cpdist = spin_test(fullmat.iloc[:,0],fullmat.iloc[:,1],surface_name='fsa5',parcellation_name='glasser_360',
+                                                            type=corrtype,n_rot=nspecialp,null_dist=True)
                             
                             #Add.
-                            fullcorr.loc[cstate,ccog] = ccorr
-                            fullcorr_r.loc[cstate,ccog] = ccorr_r
+                            fullcorr_r.loc[cstate,ccog] = ccorr
+                            fullcorr_r_p.loc[cstate,ccog] = cpval
                         
                         #If doing quadratic regression.
                         elif (corrtype == 'quadreg'):
@@ -820,11 +805,16 @@ if __name__ == '__main__':
                 #Save correlations.
                 if (corrtype == 'spearman'):
 
-                    #Save values and rounded values.
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'.csv')
-                    fullcorr.T.to_csv(outfile)
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_round.csv')
-                    fullcorr_r.T.to_csv(outfile)
+                    #Extract.
+                    outmat = fullcorr_r
+                    outmat_p = fullcorr_r_p
+                    outlist_lab = 'r'
+
+                    #Save matrix and p values.
+                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'.csv')
+                    outmat.T.to_csv(outfile)
+                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv')
+                    outmat_p.T.to_csv(outfile)
                 
                 #Save quadratic regression.
                 elif (corrtype=='quadreg'):
@@ -839,13 +829,4 @@ if __name__ == '__main__':
                     outmat.T.to_csv(outfile)
                     outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pval.csv')
                     outmat_p.T.to_csv(outfile)
-
-                    #Save rounded and thresholded values.
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_round.csv')
-                    outmat_ro = round(outmat,2)
-                    outmat_ro.T.to_csv(outfile)
-                    outfile = (outpath+cctrl+'_'+cstatetype+'_'+septypeint+'_'+corrtype+'_'+outlab+'_'+outlist_lab+'_pthres.csv')
-                    outmat_th = outmat_ro.copy()
-                    outmat_th[outmat_p >= 0.05] = np.nan
-                    outmat_th.T.to_csv(outfile)
     print('Exploration done.')

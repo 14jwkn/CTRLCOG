@@ -1,6 +1,6 @@
 # For the given k for clustering, type of SC normalization, and type and percentage of 
 # thresholding, generate box plots for the correlation between average controllability, 
-# modal controllability, and degree across subjects and across regions.
+# modal controllability, and degree across subjects.
 # Output:
 # threstype,'_',thresval,'_',sctype,'_suball.jpg' Box plots of the correlations across subjects and across regions.
 
@@ -316,139 +316,6 @@ p2 <- ggplot(plotmat,aes(x=name,y=value)) +
 plist[[pltidx]] <- p2
 pltidx <- pltidx + 1
 
-# Subject-wise ------------------------------------------------------------
-
-#Find AC-D correlations between regions for every subject for each state.
-acd_mat <- matrix(NA,nrow=nsub,ncol=nall)
-rownames(acd_mat) <- sublist
-colnames(acd_mat)  <- allstates
-for (cstate in allstates) {
-  
-  #Extract.
-  cstate_labs <- grepl(cstate,full_featlabs,fixed=T)
-  cave <- allave[,cstate_labs]
-  cdeg <- alldeg[,cstate_labs]
-  
-  #For every subject.
-  for (csub in sublist) {
-    cave_sub <- unlist(cave[csub,])
-    cdeg_sub <- unlist(cdeg[csub,])
-    acd_mat[csub,cstate] <- cor(cave_sub,cdeg_sub)
-  }
-}
-
-#Reformat names.
-colnames(acd_mat) <- allstates_labs
-
-#Convert to long format and drop NA and convert to plotting labels.
-plotmat <- data.frame(acd_mat) %>%
-  pivot_longer(everything()) %>%
-  drop_na() %>%
-  mutate(name=replace(name,name=='sc','SC'))
-plotmat$name <- factor(plotmat$name,levels=allstates_labs)
-
-#Plot boxplots.
-p2 <- ggplot(plotmat,aes(x=name,y=value)) +
-  geom_boxplot() +
-  scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
-  ggtitle('') +
-  ylab('Region Correlation Per Participant') +
-  theme(axis.title.x=element_blank(),
-        axis.title.y=element_text(size=(ntxt*ymult),margin=margin(t=0,r=cpad,b=0,l=0)),
-        panel.grid.minor.y=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        text=element_text(size=ntxt)) 
-plist[[pltidx]] <- p2
-pltidx <- pltidx + 1
-
-#Find MC-D correlations between regions for every subject for each state.
-mcd_mat <- matrix(NA,nrow=nsub,ncol=nall)
-rownames(mcd_mat) <- sublist
-colnames(mcd_mat) <- allstates
-for (cstate in allstates) {
-  
-  #Extract.
-  cstate_labs <- grepl(cstate,full_featlabs,fixed=T)
-  cmod <- allmod[,cstate_labs]
-  cdeg <- alldeg[,cstate_labs]
-  
-  #For every subject.
-  for (csub in sublist) {
-    cmod_sub <- unlist(cmod[csub,])
-    cdeg_sub <- unlist(cdeg[csub,])
-    mcd_mat[csub,cstate] <- cor(cmod_sub,cdeg_sub)
-  }
-}
-
-#Reformat names.
-colnames(mcd_mat) <- allstates_labs
-
-#Convert to long format and drop NA and convert to plotting labels.
-plotmat <- data.frame(mcd_mat) %>%
-  pivot_longer(everything()) %>%
-  drop_na() %>%
-  mutate(name=replace(name,name=='sc','SC'))
-plotmat$name <- factor(plotmat$name,levels=allstates_labs)
-
-#Plot boxplots.
-p2 <- ggplot(plotmat,aes(x=name,y=value)) +
-  geom_boxplot() +
-  scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
-  ggtitle('') +
-  ylab('') +
-  theme(plot.title=element_text(size=(ntxt*tmult),hjust=0.5),
-        axis.title.x=element_blank(),
-        axis.title.y=element_text(size=(ntxt*ymult),margin=margin(t=0,r=cpad,b=0,l=0)),
-        panel.grid.minor.y=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        text=element_text(size=ntxt)) 
-plist[[pltidx]] <- p2
-pltidx <- pltidx + 1
-
-#Find AC-MC correlations between regions for every subject for each state.
-acmc_mat <- matrix(NA,nrow=nsub,ncol=nall)
-rownames(acmc_mat) <- sublist
-colnames(acmc_mat) <- allstates
-for (cstate in allstates) {
-  
-  #Extract.
-  cstate_labs <- grepl(cstate,full_featlabs,fixed=T)
-  cave <- allave[,cstate_labs]
-  cmod <- allmod[,cstate_labs]
-  
-  #For every subject.
-  for (csub in sublist) {
-    cave_sub <- unlist(cave[csub,])
-    cmod_sub <- unlist(cmod[csub,])
-    acmc_mat[csub,cstate] <- cor(cave_sub,cmod_sub)
-  }
-}
-
-#Reformat names.
-colnames(acmc_mat) <- allstates_labs
-
-#Convert to long format and drop NA and convert to plotting labels.
-plotmat <- data.frame(acmc_mat) %>%
-  pivot_longer(everything()) %>%
-  drop_na() %>%
-  mutate(name=replace(name,name=='sc','SC'))
-plotmat$name <- factor(plotmat$name,levels=allstates_labs)
-
-#Plot boxplots.
-p2 <- ggplot(plotmat,aes(x=name,y=value)) +
-  geom_boxplot() +
-  scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
-  ggtitle('') +
-  ylab('') +
-  theme(plot.title=element_text(size=(ntxt*tmult),hjust=0.5),
-        axis.title.x=element_blank(),
-        axis.title.y=element_text(size=(ntxt*ymult),margin=margin(t=0,r=cpad,b=0,l=0)),
-        panel.grid.minor.y=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        text=element_text(size=ntxt)) 
-plist[[pltidx]] <- p2
-pltidx <- pltidx + 1
-
 # Collect -----------------------------------------------------------------
 
 #Save.
@@ -458,4 +325,4 @@ gatherpath <- paste0('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/
 dir.create(gatherpath,recursive=T)
 outfile <- paste0(gatherpath,threstype,'_',thresval,'_',sctype,'_suball.jpg')
 ggsave(outfile,arrangeGrob(grobs=plist,ncol=3),
-       units='in',width=(nwidth*3),height=(nheight*2),bg='white')
+       units='in',width=(nwidth*3),height=(nheight*1),bg='white')

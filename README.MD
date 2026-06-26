@@ -13,6 +13,10 @@ _random_search.py - Replace corresponding version in the himalaya Python package
 
 _sklearn_api.py - Replace corresponding version in the himalaya Python package.
 
+__init__.py - Replace corresponding version in the permutation_testing folder of the enigmatoolbox Python package.
+
+permutation_testing.py - Replace corresponding version in the permutation_testing folder of enigmatoolbox Python package.
+
 gcentroids.m - Finds the centroid of vectors according to a clustering.
 
 cv_splitF.m - Generates split indices for cross-validation while respecting family structure.
@@ -110,15 +114,15 @@ Analysis:
 
     LE_group_subcontrol_structfunc_stateview.py - For the given k for clustering, SC type of normalization, and thresholding type and percentage, plot the dFC, SC, and sFC matrices organized according to hemisphere and network. Also save the network legends and color bars.
 
-    LE_group_subcontrol_structfunc_stateview.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, plot average controllability, modal controllability, and degree on the brain along with radar plots to examine regions with the highest values.
+    LE_group_subcontrol_structfunc_stateview_brain.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, plot average controllability, modal controllability, and degree on the brain.
 
 10. Find the correlations between cognitive variables, and between controllability and degree.
 
-    LE_group_subcontrol_structfunc_allcorr.py - Find the correlations between g, gF, gC, gF-g, and gC-g for the main estimate with CFA. Also find the correlations for estimates based on EFA, PCA, and the NIH toolbox.
+    LE_group_subcontrol_structfunc_allcorr.py - Find the correlations between g, gF, and gC for the main estimate with CFA. Also find the correlations for estimates based on EFA, PCA, and the NIH toolbox.
 
-    LE_group_subcontrol_structfunc_allcorr.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, generate box plots for the correlation between average controllability, modal controllability, and degree across subjects and across regions.
+    LE_group_subcontrol_structfunc_allcorr.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, generate box plots for the correlation between average controllability, modal controllability, and degree across subjects.
 
-11. Generate Kernel Ridge Regression (KRR) models and comparisons of the models and do statistical tests. 
+11. Generate Kernel Ridge Regression (KRR) models, comparisons of the models, and relationships between Haufe scores and brain maps and do statistical tests. 
 
     LE_group_subcontrol_structfunc_predictF.m - For the given number of repetitions, outer loops, and inner loops for cross validation (CV) and the number of permutations, generate indices respecting family structure. Specifically, make sure families are not split between folds and make sure permutation only happens in blocks of unrelated participants.
 
@@ -132,39 +136,29 @@ Analysis:
 
     LE_group_subcontrol_structfunc_KRR_compare.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, do corrected paired t-tests between the different models predicting each cognitive variable using either average controllability, modal controllability, or degree calculated from the set of state matrices specified.
 
-    LE_group_subcontrol_structfunc_KRR_scorcomp_FDR.m - Across participants, for a type of SC normalization, and the type and percentage of thresholding, do FDR across the test set CV accuracy scores and accuracy comparison scores of interest.
+    LE_group_subcontrol_structfunc_KRR_maplook.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, number of CV repetitions, inner k, outer k, analysis block, and number of permutations for the analysis, find Dice coefficients between significant Haufe scores and PFIT/MD maps. Generate p-values for Dice coefficients using permutation. Find Spearman's correlation to quantify the relationship and R2 for quadratic regression to quantify the statistical relationship between Haufe scores and controllability/principal cortical gradient. Generate p-values for the Spearman's correlation and R2.
 
-    LE_group_subcontrol_structfunc_KRR_feat_FDR.m - Across participants, for a type of SC normalization, and the type and percentage of thresholding, do FDR across the Haufe feature scores from all models of interest.
+    LE_group_subcontrol_structfunc_KRR_analyze_FDR.py - For a given k for clustering, type of SC normalization, type and percentage of thresholding, number of CV repetitions, CV inner k, CV outer k, and number of permutations, FDR correct across model R2 and model R2 comparisons, FDR correct across model Haufe scores, and FDR correct across brain map Spearman's correlations, quadratic regression R2, and Dice coefficients.
 
-    LE_group_subcontrol_structfunc_KRR_detailed_plot.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, controllability type, the set of matrices, the set of cognitive variables, CV repetitions, CV inner fold number, CV outer fold number, and permutation number, plot the regions with significant Haufe scores and corresponding radar plots for the networks and regions to analyze.
+    LE_group_subcontrol_structfunc_KRR_analyze_featplot.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, controllability type, the set of matrices, the set of cognitive variables, CV repetitions, CV inner fold number, CV outer fold number, and permutation number, plot the regions with significant FDR-corrected Haufe scores.
 
-    LE_group_subcontrol_structfunc_KRR_common_plot.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, the set of controllability, the set of matrices, the set of cognitive variables, CV repetitions, CV inner fold number, CV outer fold number, and permutation number, plot the regions with significant Haufe scores which are common and unique between average and modal controllability.
+    LE_group_subcontrol_structfunc_KRR_maplook_plot.py - For a given k for clustering, type of SC normalization, type and percentage of thresholding, number of CV repetitions, inner k, outer k, analysis block, and number of permutations for the analysis, illustrate the relationship between Haufe scores and controllability or strength/principal cortical gradient using scatter plots with the quadratic regression line, labelled with R2 and Spearman's correlation between Haufe scores and controllability or strength, with FDR-corrected significance color-coded.
 
-12. Investigate correlations between Haufe scores and different brain maps.
+12. Confirm correspondence by investigating correlations.
 
-    LE_group_subcontrol_structfunc_KRR_maplook.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, find Dice coefficients between significant Haufe scores and PFIT/MD maps. Generate p-values for Dice coefficients using permutation. Find Spearman's correlation to quantify the relationship and R2 for quadratic regression to quantify the statistical relationship between Haufe scores and controllability/principal cortical gradient. Generate p-values for the R2.
-
-    LE_group_subcontrol_structfunc_KRR_maplook_plot.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, illustrate the relationship between Haufe scores and controllability/principal cortical gradient using linear and quadratic regression lines and Pearson's and Spearman's correlation.
-
-    LE_group_subcontrol_structfunc_KRR_maplook_FDR.m - Across participants, for a type of SC normalization, and the type and percentage of thresholding, retrieve the brain map analysis statistically tested values of interest to FDR correct. These include the Dice coefficients between significant Haufe scores and PFIT/MD maps and R2 for quadratic regression to quantify the statistical relationship between Haufe scores and controllability/principal cortical gradient. 
+    LE_group_subcontrol_structfunc_KRR_score_corrlook.py - For a given k, SC type of normalization, threshold type, threshold value, and number of repetitions, inner loop number, and outer loop number for CV, investigate correlations to confirm correspondence - these include the correlation between group-averaged controllability and strength, individual SC and dFC regional importance to prediction and the combined SC & dFC regional importance for the main model, and controllability and strength regional importance for the main model. 
 
 13. Plot the accuracy scores for models while varying parameters.
 
-    LE_group_subcontrol_structfunc_KRR_paramvar.py - For a given number of repetitions, inner loop number, and outer loop number for CV, collect the CV average test set accuracy score from the models using different variations of average or modal controllability, matrix modalities, thresholding types, thresholding values, and cognitive measures. First build the labels, then using the labels, read them all into a matrix for plotting use.
+    LE_group_subcontrol_structfunc_KRR_paramvar_SC_dFC.py - For a given number of repetitions, inner loop number, and outer loop number for CV, find out whether the main findings of the paper hold across different parameter variations for the SC & dFC model - dFC performs better than SC, g is predicted better than gF and gC, the principal gradient exhibits a relationship with regional importance in the expected direction  for dFC. The parameters that are varied include threshold type and level, k for dFC, cognitive variable measures, and SC normalization. Generate line plots that display these comparisons.
 
-    LE_group_subcontrol_structfunc_KRR_paramvar_plot.R - For a given number of repetitions, inner loop number, and outer loop number for CV, plot the CV average test set accuracy score for different models to illustrate changes from varying the threshold type and value, k for clustering, and how the cognitive variable is measured.
+    LE_group_subcontrol_structfunc_KRR_paramvar_SC.py - For a given number of repetitions, inner loop number, and outer loop number for CV,  find out whether the main findings of the paper hold across different parameter variations of threshold type and level for the SC model - controllability and strength exhibit high correspondence, and  g is predicted better than gF and gC. Generate line plots that display these comparisons.
 
-14. Investigate what happens when both average and modal controllability are input in the same model.
-
-    LE_group_subcontrol_structfunc_KRR_score_bothctrl.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV similar to the main analysis but with both average and modal controllability in the same model. Generate the CV accuracy for the test set, the CV accuracy for the inner CV for the best hyperparameter set, the decomposed CV accuracy for the test set for each feature band, the decomposed CV accuracy after demeaning of the test set according to the decomposition assumptions, and the Haufe scores.
-
-    LE_group_subcontrol_structfunc_KRR_score_format_bothctrl.R - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, collect decomposed accuracy scores on the model predicting each cognitive variable in the given batch using both average and modal controllability calculated from the set of state matrices specified. Reformat to generate percentages of the total accuracy score.
-
-15. Compare models with and without minimum spanning tree.
+14. Compare models with and without minimum spanning tree.
 
     LE_group_subcontrol_structfunc_KRR_score_mst_compare.R - For a given k for clustering type of SC normalization, and type and percentage of thresholding, collect feature scores from MST and no MST versions predicting each cognitive variable and correlate them.
 
-16. Compare models with discrete vs continuous time systems (In Progress - no continuous modal controllability).
+15. Compare models with discrete vs continuous time systems (In Progress - no continuous modal controllability).
 
     LE_group_subcontrol_structfunc_cont.py - For a given k for clustering, type of SC normalization, type and percentage of  thresholding for the subject, calculate continuous time system controllability versions for each state.
 

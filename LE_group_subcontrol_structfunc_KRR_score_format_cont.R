@@ -54,7 +54,7 @@ krrpath <- paste0(basepath,'KRRXFS/cont_',controltype,'_',statetype,'_',septype,
 #Set parameters.
 nk <- as.numeric(k)
 if (septype=='comCFAng') {
-  coglist <- c('gCFA','P24_CR','PV','gFngCFA','gCngCFA')
+  coglist <- c('gCFA','P24_CR','PV')
 }
 ncog <- length(coglist)
 if (statetype == 'SC_sFC_dFCcat') {

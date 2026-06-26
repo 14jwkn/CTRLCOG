@@ -95,10 +95,10 @@ if __name__ == '__main__':
     nstate = len(statelist)
     ctrl_list = ['ave','mod','deg']
     nctrl = len(ctrl_list)
-    coglist = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    coglist = ['gCFA','P24_CR','PV']
     ncog = len(coglist)
     cogset_list = ['comCFAng']
-    cogset_cog = [['gCFA','P24_CR','PV','gFngCFA','gCngCFA']]
+    cogset_cog = [['gCFA','P24_CR','PV']]
     ncogset = len(cogset_list)
  
     #Extract test accuracy matrices.
@@ -134,8 +134,8 @@ if __name__ == '__main__':
     #Comparison of dFC - SC.
     cstate1 = 'dFCcat'
     cstate2 = 'SC'
-    cctrl_list = ['ave','mod']
-    ccog_list = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    cctrl_list = ['ave','mod','deg']
+    ccog_list = ['gCFA','P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for ccog in ccog_list:
@@ -162,8 +162,8 @@ if __name__ == '__main__':
     #Comparison of SC+dFC - dFC.
     cstate1 = 'SC_dFCcat'
     cstate2 = 'dFCcat'
-    cctrl_list = ['ave','mod']
-    ccog_list = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    cctrl_list = ['ave','mod','deg']
+    ccog_list = ['gCFA','P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for ccog in ccog_list:
@@ -190,8 +190,8 @@ if __name__ == '__main__':
     #Comparison of sFC - SC.
     cstate1 = 'sFC'
     cstate2 = 'SC'
-    cctrl_list = ['ave','mod']
-    ccog_list = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    cctrl_list = ['ave','mod','deg']
+    ccog_list = ['gCFA','P24_CR','PV','deg']
     row_labs = []
     for cctrl in cctrl_list:
         for ccog in ccog_list:
@@ -218,8 +218,8 @@ if __name__ == '__main__':
     #Comparison of dFC - sFC.
     cstate1 = 'dFCcat'
     cstate2 = 'sFC'
-    cctrl_list = ['ave','mod']
-    ccog_list = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    cctrl_list = ['ave','mod','deg']
+    ccog_list = ['gCFA','P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for ccog in ccog_list:
@@ -246,8 +246,8 @@ if __name__ == '__main__':
     #Comparison of SC+dFC - SC+sFC.
     cstate1 = 'SC_dFCcat'
     cstate2 = 'SC_sFC'
-    cctrl_list = ['ave','mod']
-    ccog_list = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    cctrl_list = ['ave','mod','deg']
+    ccog_list = ['gCFA','P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for ccog in ccog_list:
@@ -272,10 +272,10 @@ if __name__ == '__main__':
     paircom.to_csv(outfile)
 
     #Comparison of g with gF, gC, gF-g and gC-g.
-    cctrl_list = ['ave','mod']
+    cctrl_list = ['ave','mod','deg']
     cstate_list = ['SC','dFCcat','SC_dFCcat']
     ccog_list1 = ['gCFA']
-    ccog_list2 = ['P24_CR','PV','gFngCFA','gCngCFA']
+    ccog_list2 = ['P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for cstate in cstate_list:
@@ -304,9 +304,9 @@ if __name__ == '__main__':
     paircom.to_csv(outfile)
 
     #Comparison of AC and MC with degree.
-    cctrl_list = ['ave','mod']
+    cctrl_list = ['ave','mod','deg']
     cstate_list = ['SC','dFCcat','SC_dFCcat']
-    ccoglist = ['gCFA','P24_CR','PV','gFngCFA','gCngCFA']
+    ccoglist = ['gCFA','P24_CR','PV']
     row_labs = []
     for cctrl in cctrl_list:
         for cstate in cstate_list:
