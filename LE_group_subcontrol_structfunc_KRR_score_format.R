@@ -58,15 +58,17 @@ if (septype=='comCFAng') {
 }
 ncog <- length(coglist)
 if (statetype == 'SC_sFC_dFCcat') {
-  states <- c('sc','sFC',paste0('s',1:nk))
+  feature_names <- c('sc','sFC',paste0('s',1:nk))
 } else if (statetype == 'SC_dFCcat') {
-  states <- c('sc',paste0('s',1:nk))
+  feature_names <- c('sc',paste0('s',1:nk))
+} else if (statetype == 'SC_dFCsep') {
+  feature_names <- c('sc',paste0('s',1:nk))
 } else if (statetype == 'dFCcat') {
-  states <- paste0('s',1:nk)
+  feature_names <- paste0('s',1:nk)
 } else if (statetype == 'SC') {
-  states <- c('sc')
+  feature_names <- c('sc')
 } else if (statetype == 'sFC') {
-  states <- c('sFC')
+  feature_names <- c('sFC')
 }
 nspace <- length(feature_names)
 

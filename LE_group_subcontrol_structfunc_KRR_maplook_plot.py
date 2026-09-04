@@ -41,7 +41,7 @@ from matplotlib import pyplot as plt
 import matplotlib.lines as mlines
 from docopt import docopt
 
-#Quadratic regression.
+# Quadratic regression.
 def quad_reg(cx,cy):
    
     #Generate squared term and add to model.
@@ -61,7 +61,7 @@ def quad_reg(cx,cy):
     #Return.
     return (b2,b1,b0,r2)
 
-#Reader for control values.
+# Reader for control values.
 def control_reader(nk,nroi,
                    basepath,scpath,sFCpath):
 
@@ -195,7 +195,7 @@ def control_reader(nk,nroi,
     #Return each item.
     return (ctrl_collect)
 
-#Reader for prediction values.
+# Reader for prediction values.
 def predict_reader(basepath,nrep,inner_k,outer_k,sctype,
                    ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes,
                    featver_list,nfeatver):
@@ -258,7 +258,7 @@ def predict_reader(basepath,nrep,inner_k,outer_k,sctype,
 if __name__ == '__main__':
     __spec__ = None
     
-    #Catches arguments.
+    # Catches arguments.
     args = docopt(__doc__)
     k = args['<k>']
     sctype = args['<sctype>']
@@ -272,7 +272,7 @@ if __name__ == '__main__':
     print('Doing:',k,sctype,threstype,thresval,
           nrep,inner_k,outer_k,wantblock,wantperm)
     
-    #Set paths.
+    # Set paths.
     controltype = 'controlcomp'
     statetype = 'statecomp'
     septype = 'cogcomp'
@@ -288,7 +288,7 @@ if __name__ == '__main__':
                   nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+'/correxplore/TwoP_FDR/specialp/')
     os.makedirs(explorepath,exist_ok=True)
     
-    #Initialize basic values.
+    # Initialize basic values.
     nroi = 360
     nk = int(k)
     xother_cont = ['Age']
@@ -304,7 +304,7 @@ if __name__ == '__main__':
     npredtype = len(predtype_list)
     full_statesplits = ['sc','sFC'] + [('s'+str(x+1)) for x in range(nk)]
 
-    #Set types of interest to be compared.
+    # Set types of interest to be compared.
     singstates = ['SC']
     nsing = len(singstates)
     multstates = ['dFCcat','SC_dFCcat']
@@ -319,30 +319,30 @@ if __name__ == '__main__':
     coglist = sum(cog_septypes,[])
     ncog = len(coglist)
     
-    #Get cognitive and other predictor data.
+    # Get cognitive and other predictor data.
     infile = ('../outputs/c_cognition/'+subgroup+'/pred_all.csv')
     othercog = pd.read_csv(infile,index_col=0,header=0)
     othercog = othercog.loc[sublist,:]
     cogmat = othercog.loc[:,coglist]
     othercont = othercog.loc[:,xother_cont]
 
-    #Read in dummy data for categorical confounds, then merge.
+    # Read in dummy data for categorical confounds, then merge.
     infile = ('../outputs/c_cognition/'+subgroup+'/dum_sel.csv')
     dummat = pd.read_csv(infile,index_col=0,header=0)
     dummat = dummat.loc[sublist,:]
     othercat = dummat.filter(regex=xother_cat)
     othermat = pd.concat((othercont,othercat),axis=1)
 
-    #Read in control values.
+    # Read in control values.
     ctrl_collect = control_reader(nk,nroi,
                                   basepath,scpath,sFCpath)
     
-    #Read in predictive values.
+    # Read in predictive values.
     pred_collect = predict_reader(basepath,nrep,inner_k,outer_k,sctype,
                                 ctrltypes,nctrl,statetypes,nstatetype,septypes,nseptype,cog_septypes,
                                 featver_list,nfeatver)
     
-    #Read in gradient values.
+    # Read in gradient values.
     infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients.csv')
     sFCgr_all = pd.read_csv(infile,header=None)
     infile = ('../outputs/r_sFC/dr_full/none/0/sFC_gradients_flip.csv')
@@ -353,12 +353,12 @@ if __name__ == '__main__':
             sFCgr_all.iloc[:,gidx] = -sFCgr_all.iloc[:,gidx]
     sFCgr_all.index = [('r'+str(ridx+1)) for ridx in range(nroi)]
 
-    #Do group-average controllability relationship with predictiveness.
+    # Do group-average controllability relationship with predictiveness.
     print('Control-predictiveness relationship.')
     outlab = 'ctrlpred'
     outpath = (explorepath+outlab)
 
-    #Set up.
+    # Set up.
     cstatetype = 'SC_dFCcat'
     csplits = []
     if 'SC' in cstatetype:
@@ -385,6 +385,19 @@ if __name__ == '__main__':
             row_combos.append((ccog, cctrl))
     nrows = len(row_combos)     
     ncols = len(csplits)     
+
+    # Find the minimum which is the p-value from FDR-correction of the the 
+    # p-value where no null value was higher.
+    minp = []
+    for row_idx,(ccog,cctrl) in enumerate(row_combos):
+                
+            # Read quadratic regression and Spearman's correlation values.
+            infile = (outpath+'/full/full_'+cctrl+'_'+cstatetype+
+                    '_comCFAng_covha_ctrlpred_'+ccog+'_summary.csv')
+            inmat = pd.read_csv(infile,index_col=0)
+            minp.append(np.min(inmat.loc[:,'R2_P']))
+            minp.append(np.min(inmat.loc[:,'SP_P']))
+    minp = np.min(minp)
 
     # Gather scatter plots.
     fig, axes = plt.subplots(nrows,ncols,figsize=(3*ncols,3*nrows),squeeze=False)
@@ -415,30 +428,42 @@ if __name__ == '__main__':
             # Select cell for plot.
             ax = axes[row_idx,col_idx]   
 
-            # Get QR R2, QR R2 P, SP, SP P.
+            # Get QR R2, QR R2 P, B2, SP, SP P.
             cr2 = round(inmat.loc[cstate,'R2'],2)
+            cr2_p = round(inmat.loc[cstate,'R2_P'],3)
             if (inmat.loc[cstate,'R2_P'] < 0.05):
                 cr2_sig = '*'
             else:
                 cr2_sig = ''
             csp = round(inmat.loc[cstate,'SP'],2)
+            csp_p = round(inmat.loc[cstate,'SP_P'],3)
             if (inmat.loc[cstate,'SP_P'] < 0.05):
                 csp_sig = '*'
             else:
                 csp_sig = ''
-            
-            # Turn title a color based on significance and sign.
-            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
-                title_cl = '#FF0000'
-            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
-                title_cl = '#00A2FF'
-            elif (cr2_sig=='*') and (csp_sig!='*'):
-                title_cl = '#097969'
-            elif (cr2_sig!='*') and (csp_sig=='*'):
-                title_cl = '#FFAA33'
+
+            # Make label < for no permuted value greater than the true value.
+            if inmat.loc[cstate,'R2_P'] == minp:
+                cr2_p_lab = '<'
             else:
-                title_cl = 'black'
-           
+                cr2_p_lab = '='
+            if inmat.loc[cstate,'SP_P'] == minp:
+                csp_p_lab = '<'
+            else:
+                csp_p_lab = '='
+            
+            # Set border color based on significance and sign (title stays black).
+            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
+                border_cl = 'red'
+            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
+                border_cl = '#1f77b4'
+            elif (cr2_sig=='*') and (csp_sig!='*'):
+                border_cl = 'green'
+            elif (cr2_sig!='*') and (csp_sig=='*'):
+                border_cl = "#FFAA33"
+            else:
+                border_cl = 'black'
+            
             # Get predictive score.
             inkey = (cctrl + '.' + cstatetype + '.' + ccog + '.covha.' + cstate)
             cpred = pred_collect[inkey]
@@ -463,9 +488,9 @@ if __name__ == '__main__':
             line_cY = np.polyval(beta, line_cX)
 
             # Plot scatter plot with values labelled.
-            ax.scatter(cX,cY,s=2)
-            ax.axvline(x=0, color='red', linestyle='--', linewidth=1)
-            ax.plot(line_cX, line_cY, color='green')
+            ax.scatter(cX,cY,s=2,color='black')
+            ax.axvline(x=0, color='black', linestyle='--', linewidth=1)
+            ax.plot(line_cX, line_cY, color='black')
             if cstate == 's3':
                 xlab_out = f'{cctrl_lab} Regional Importance for Predicting {ccog_lab}'
             else:
@@ -474,11 +499,17 @@ if __name__ == '__main__':
                 ylab_out = f'{cctrl_lab}'
             else:
                 ylab_out = ''
-            ax.set_xlabel(xlab_out)
-            ax.set_ylabel(ylab_out)
+            ax.set_xlabel(xlab_out,fontweight='bold')
+            ax.set_ylabel(ylab_out,fontweight='bold')
             ax.set_title(
-                f'{cstate.upper()} | QR R²={cr2}{cr2_sig} | RHO={csp}{csp_sig}',
-                fontsize=10,loc='left',color=title_cl)
+                f'{cstate.upper()} | QR-R²={cr2}{cr2_sig} , RHO={csp}{csp_sig}\n'
+                f'p   | QR-R²{cr2_p_lab}{cr2_p} , RHO{csp_p_lab}{csp_p}',
+                fontsize=10,loc='left',color='black')
+
+            # Color the plot border to reflect significance/sign instead of the title.
+            for spine in ax.spines.values():
+                spine.set_edgecolor(border_cl)
+                spine.set_linewidth(4 if border_cl != 'black' else 1)
 
     # Draw a single line between the row above g, shift other plots down.
     plt.tight_layout()
@@ -504,16 +535,24 @@ if __name__ == '__main__':
     )
     fig.add_artist(line)
 
+    # Panel label A.
+    fig.text(0.01, 0.99, 'A', fontsize=18, fontweight='bold',
+                va='top', ha='left', transform=fig.transFigure)
+
+    # Panel label B.
+    fig.text(0.01, y_mid - 0.01, 'B', fontsize=18, fontweight='bold',
+                va='top', ha='left', transform=fig.transFigure)
+
     # Save.
     plt.savefig((outpath+'/ctrlpred_summary_plot.png'),dpi=1080,bbox_inches='tight')
     plt.close()
 
-    #Do sFC gradient 1 relationship with predictiveness.
+    # Do sFC gradient 1 relationship with predictiveness.
     print('sFC gradient 1-predictiveness relationship.')
     outlab = 'grad1pred'
     outpath = (explorepath+outlab)
 
-    #Set up.
+    # Set up.
     cstatetype = 'SC_dFCcat'
     csplits = []
     if 'SC' in cstatetype:
@@ -562,29 +601,43 @@ if __name__ == '__main__':
             # Select cell for plot.
             ax = axes[row_idx,col_idx]   
 
-            # Get QR R2, QR R2 P, SP, SP P.
+            # Get QR R2, QR R2 P, B2, SP, SP P.
             cr2 = round(inmat.loc[cstate,'R2'],2)
+            cr2_p = round(inmat.loc[cstate,'R2_P'],3)
             if (inmat.loc[cstate,'R2_P'] < 0.05):
                 cr2_sig = '*'
             else:
                 cr2_sig = ''
+            # cb2 = round(inmat.loc[cstate,'B2'],2)
             csp = round(inmat.loc[cstate,'SP'],2)
+            csp_p = round(inmat.loc[cstate,'SP_P'],3)
             if (inmat.loc[cstate,'SP_P'] < 0.05):
                 csp_sig = '*'
             else:
                 csp_sig = ''
-            
-            # Turn title a color based on significance and sign.
-            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
-                title_cl = '#FF0000'
-            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
-                title_cl = '#00A2FF'
-            elif (cr2_sig=='*') and (csp_sig!='*'):
-                title_cl = '#097969'
-            elif (cr2_sig!='*') and (csp_sig=='*'):
-                title_cl = "#FFAA33"
+
+            # Make label < for no permuted value greater than the true value, is 
+            # the same p-value as for the other sub-analysis.
+            if inmat.loc[cstate,'R2_P'] == minp:
+                cr2_p_lab = '<'
             else:
-                title_cl = 'black'
+                cr2_p_lab = '='
+            if inmat.loc[cstate,'SP_P'] == minp:
+                csp_p_lab = '<'
+            else:
+                csp_p_lab = '='
+            
+            # Set border color based on significance and sign (title stays black).
+            if (cr2_sig=='*') and (csp_sig=='*') and (csp >= 0):
+                border_cl = 'red'
+            elif (cr2_sig=='*') and (csp_sig=='*') and (csp < 0):
+                border_cl = '#1f77b4'
+            elif (cr2_sig=='*') and (csp_sig!='*'):
+                border_cl = 'green'
+            elif (cr2_sig!='*') and (csp_sig=='*'):
+                border_cl = "#FFAA33"
+            else:
+                border_cl = 'black'
             
             # Get regional importances.
             inkey = (cctrl+'.'+cstatetype+'.'+ccog+'.covha.'+cstate)
@@ -611,9 +664,9 @@ if __name__ == '__main__':
             line_cY = np.polyval(beta, line_cX)
 
             # Plot scatter plot with values labelled.
-            ax.scatter(cX,cY,s=2)
-            ax.axvline(x=0, color='red', linestyle='--', linewidth=1)
-            ax.plot(line_cX, line_cY, color='green')
+            ax.scatter(cX,cY,s=2,color='black')
+            ax.axvline(x=0, color='black', linestyle='--', linewidth=1)
+            ax.plot(line_cX, line_cY, color='black')
             if cstate == 's3':
                 xlab_out = f'{cctrl_lab} Regional Importance for Predicting {ccog_lab}'
             else:
@@ -622,11 +675,17 @@ if __name__ == '__main__':
                 ylab_out = f'Principal Gradient'
             else:
                 ylab_out = ''
-            ax.set_xlabel(xlab_out)
-            ax.set_ylabel(ylab_out)
+            ax.set_xlabel(xlab_out,fontweight='bold')
+            ax.set_ylabel(ylab_out,fontweight='bold')
             ax.set_title(
-                f'{cstate.upper()} | QR R²={cr2}{cr2_sig} | RHO={csp}{csp_sig}',
-                fontsize=10,loc='left',color=title_cl)
+                f'{cstate.upper()} | QR-R²={cr2}{cr2_sig} , RHO={csp}{csp_sig}\n'
+                f'p   | QR-R²{cr2_p_lab}{cr2_p} , RHO{csp_p_lab}{csp_p}',
+                fontsize=10,loc='left',color='black')
+
+            # Color the plot border to reflect significance/sign instead of the title.
+            for spine in ax.spines.values():
+                spine.set_edgecolor(border_cl)
+                spine.set_linewidth(4 if border_cl != 'black' else 1)
 
     # Shift plots down.
     plt.tight_layout()

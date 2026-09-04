@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV.
+For a given gender, k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV.
 This model predicts each cognitive variable in the given batch using either average controllability, modal controllability,
 or degree calculated from the set of state matrices specified. CV is done for the given repetitions, and inner and outer
 fold number. To facilitate permutation testing with the same parameters set, for each fold, the Y variable with transformations
@@ -12,7 +12,7 @@ Output:
 score_collect.h5 h5 file containing parameters to conduct permutation testing, accuracy scores, and Haufe scores.
 
 Usage: 
-    LE_group_subcontrol_structfunc_KRR_score.py <k> <sctype> <threstype> <thresval> <controltype> <statetype> <septype> <nrep> <inner_k> <outer_k>
+    LE_group_subcontrol_structfunc_KRR_score_gender.py <k> <sctype> <threstype> <thresval> <controltype> <statetype> <septype> <nrep> <inner_k> <outer_k> <gender>
     
 Arguments:
     
@@ -26,6 +26,7 @@ Arguments:
     <nrep> Number of CV repetitions
     <inner_k> Inner K in K-fold CV hyperparameter search
     <outer_k> Outer K in K-fold CV
+    <gender> Gender
 
 """
 
@@ -313,9 +314,10 @@ if __name__ == '__main__':
     nrep = args['<nrep>']
     inner_k = args['<inner_k>']
     outer_k = args['<outer_k>']
+    gender = args['<gender>']
     print('Doing:',k,sctype,threstype,thresval,
           controltype,statetype,septype,
-          nrep,inner_k,outer_k)
+          nrep,inner_k,outer_k,gender)
     
     #Set backend.
     cbackend = 'numpy' #Can be numpy, torch, torch_cuda, cupy
@@ -330,7 +332,7 @@ if __name__ == '__main__':
                 sc_subgroup+'/collect/'+threstype+'/'+thresval+'/')
     scpath = ('../outputs/d_SC/'+sc_subgroup+'/'+threstype+'/'+thresval+'/'+sctype+'/')
     sFCpath = ('../outputs/r_sFC/'+sc_subgroup+'/'+threstype+'/'+thresval+'/')
-    krrpath = (basepath+'KRRXFS/'+controltype+'_'+statetype+'_'+septype+'_'+
+    krrpath = (basepath+'KRRXFS/'+gender+'_'+controltype+'_'+statetype+'_'+septype+'_'+
                nrep+'_'+inner_k+'_'+outer_k+'_'+sctype+'/')
     os.makedirs(krrpath,exist_ok=True)
     
@@ -344,11 +346,15 @@ if __name__ == '__main__':
     xcon = True
     ycon = True
     xother_cont = ['Age']
-    xother_cat_list = ['Gender']
-    xother_cat = '|'.join(xother_cat_list)
     
     #Outfile define.
     outfile = (krrpath+'score_collect.h5')
+
+    # Read subjects.
+    subfile = ('dr_full_intersect_'+gender+'.txt')
+    with open(subfile) as f:
+        sublist = [int(subject.rstrip()) for subject in f]
+    nsub = len(sublist)
 
     #Read in the full group Gramian error table to find states with errors.
     infile = (basepath+'/state_images/'+sctype+'_SC_sFC_dFC_gram.csv')
@@ -360,8 +366,7 @@ if __name__ == '__main__':
     #Get dFC predictor data.
     infile = (basepath+controltype+'_tab.csv')
     dFCall = pd.read_csv(infile,index_col=0,header=None)
-    sublist = list(dFCall.index)
-    nsub = len(sublist)
+    dFCall = dFCall.loc[sublist,:]
 
     #Generate dFC predictor labels.
     predlabs = []
@@ -392,6 +397,7 @@ if __name__ == '__main__':
     else:
         infile = (scpath+'deg_sc.csv')
     scmat = pd.read_csv(infile,index_col=0,header=None)
+    scmat = scmat.loc[sublist,:]
     predlabs = [('sc_r'+str(ridx+1)) for ridx in range(nroi)]
     scmat.columns = predlabs
 
@@ -412,6 +418,7 @@ if __name__ == '__main__':
     #Read sFC.
     infile = (sFCpath+controltype+'_sFC.csv')
     sFCmat = pd.read_csv(infile,index_col=0,header=None)
+    sFCmat = sFCmat.loc[sublist,:]
     predlabs = [('sFC_r'+str(ridx+1)) for ridx in range(nroi)]
     sFCmat.columns = predlabs
 
@@ -460,20 +467,6 @@ if __name__ == '__main__':
         start_and_end = np.concatenate([[0],np.cumsum(n_features_list)])
         slices = [slice(start,end) 
                   for start,end in zip(start_and_end[:-1],start_and_end[1:])]
-        nspace = len(feature_names)
-
-    #If doing SC and dFC with dFC separated.
-    elif statetype == 'SC_dFCsep':
-
-        #Concatenate everything.
-        predmat = pd.concat((scmat,dFCall),axis=1)
-
-        #Kernelize each slice.
-        feature_names = ['sc'] + [f's{x+1}' for x in range(nk)]
-        n_features_list = [sum(col.startswith(f'{fname}_r') for col in predmat.columns) for fname in feature_names]
-        start_and_end = np.concatenate([[0],np.cumsum(n_features_list)])
-        slices = [slice(start,end) 
-                    for start,end in zip(start_and_end[:-1],start_and_end[1:])]
         nspace = len(feature_names)
     
     #If doing SC and sFC.
@@ -557,17 +550,11 @@ if __name__ == '__main__':
     ncog = len(coglist)
     cogmat = othercog.loc[:,coglist]
     othercont = othercog.loc[:,xother_cont]
-
-    #Read in dummy data for categorical confounds, then merge.
-    infile = ('../outputs/c_cognition/'+subgroup+'/dum_sel.csv')
-    dummat = pd.read_csv(infile,index_col=0,header=0)
-    dummat = dummat.loc[sublist,:]
-    othercat = dummat.filter(regex=xother_cat)
-    othermat = pd.concat((othercont,othercat),axis=1)
+    othermat = othercont
 
     #Read in the CV fold indices.
     infile = ('../outputs/r_stateflex/statecalc_test/LE/ver_MATLAB/group/'+
-              subgroup+'/6/SC_dFC/'+sc_subgroup+'/predict_splits/r'+
+              subgroup+'/6/SC_dFC/'+sc_subgroup+'/predict_splits/'+gender+'_r'+
               str(nrep)+'_o'+str(outer_k)+'_i'+str(inner_k)+'_predict_splits.h5')
     
     #Read in outer CV test indices for each repetition.

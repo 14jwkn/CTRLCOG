@@ -1,6 +1,7 @@
 # For the given k for clustering, type of SC normalization, and type and percentage of 
 # thresholding, generate box plots for the correlation between average controllability, 
-# modal controllability, and degree across subjects.
+# modal controllability, and degree across subjects along with an annotation of the
+# group-average correlations.
 # Output:
 # threstype,'_',thresval,'_',sctype,'_suball.jpg' Box plots of the correlations across subjects and across regions.
 
@@ -168,6 +169,8 @@ pltidx <- 1
 acd_mat <- matrix(NA,nrow=nroi,ncol=nall)
 rownames(acd_mat) <- paste0('r',as.character(1:nroi))
 colnames(acd_mat) <- allstates
+acd_avg <- rep(NA,nall)
+names(acd_avg) <- allstates
 for (cstate in allstates) {
   
   #Extract.
@@ -188,10 +191,16 @@ for (cstate in allstates) {
     cdeg_reg <- cdeg[,cregion_lab]
     acd_mat[cregion,cstate] <- cor(cave_reg,cdeg_reg)
   }
+  
+  #Correlation of the group-average (across participants) AC and D, across regions.
+  cave_mean <- colMeans(cave,na.rm=T)
+  cdeg_mean <- colMeans(cdeg,na.rm=T)
+  acd_avg[cstate] <- cor(cave_mean,cdeg_mean)
 }
 
 #Reformat names.
 colnames(acd_mat) <- allstates_labs
+names(acd_avg) <- allstates_labs
 
 #Convert to long format and drop NA and convert to plotting labels.
 plotmat <- data.frame(acd_mat) %>%
@@ -200,18 +209,26 @@ plotmat <- data.frame(acd_mat) %>%
   mutate(name=replace(name,name=='sc','SC'))
 plotmat$name <- factor(plotmat$name,levels=allstates_labs)
 
+#Group-average correlation, one point per state.
+avgmat <- data.frame(name=names(acd_avg),value=as.numeric(acd_avg)) %>%
+  drop_na() %>%
+  mutate(name=replace(name,name=='sc','SC'))
+avgmat$name <- factor(avgmat$name,levels=allstates_labs)
+
 #Plot boxplots.
 p2 <- ggplot(plotmat,aes(x=name,y=value)) +
-    geom_boxplot() +
-    scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
-    ggtitle('AC vs S') +
-    ylab('Participant Correlation Per Region') +
-    theme(plot.title=element_text(size=(ntxt*tmult),hjust=0.5),
-          axis.title.x=element_blank(),
-          axis.title.y=element_text(size=(ntxt*ymult),margin=margin(t=0,r=cpad,b=0,l=0)),
-          panel.grid.minor.y=element_blank(),
-          panel.grid.minor.x=element_blank(),
-          text=element_text(size=ntxt)) 
+  geom_hline(yintercept=0,linetype='dashed',color='gray50') +
+  geom_boxplot() +
+  geom_point(data=avgmat,aes(x=name,y=value),color='red',size=2,shape=18) +
+  scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
+  ggtitle('AC vs S') +
+  ylab('Participant Correlation Per Region') +
+  theme(plot.title=element_text(size=(ntxt*tmult),hjust=0.5),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size=(ntxt*ymult),margin=margin(t=0,r=cpad,b=0,l=0)),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        text=element_text(size=ntxt)) 
 plist[[pltidx]] <- p2
 pltidx <- pltidx + 1
 
@@ -219,6 +236,8 @@ pltidx <- pltidx + 1
 mcd_mat <- matrix(NA,nrow=nroi,ncol=nall)
 rownames(mcd_mat) <- paste0('r',as.character(1:nroi))
 colnames(mcd_mat) <- allstates
+mcd_avg <- rep(NA,nall)
+names(mcd_avg) <- allstates
 for (cstate in allstates) {
   
   #Extract.
@@ -239,10 +258,16 @@ for (cstate in allstates) {
     cdeg_reg <- cdeg[,cregion_lab]
     mcd_mat[cregion,cstate] <- cor(cmod_reg,cdeg_reg)
   }
+  
+  #Correlation of the group-average (across participants) MC and D, across regions.
+  cmod_mean <- colMeans(cmod,na.rm=T)
+  cdeg_mean <- colMeans(cdeg,na.rm=T)
+  mcd_avg[cstate] <- cor(cmod_mean,cdeg_mean)
 }
 
 #Reformat names.
 colnames(mcd_mat) <- allstates_labs
+names(mcd_avg) <- allstates_labs
 
 #Convert to long format and drop NA and convert to plotting labels.
 plotmat <- data.frame(mcd_mat) %>%
@@ -251,9 +276,17 @@ plotmat <- data.frame(mcd_mat) %>%
   mutate(name=replace(name,name=='sc','SC'))
 plotmat$name <- factor(plotmat$name,levels=allstates_labs)
 
+#Group-average correlation, one point per state.
+avgmat <- data.frame(name=names(mcd_avg),value=as.numeric(mcd_avg)) %>%
+  drop_na() %>%
+  mutate(name=replace(name,name=='sc','SC'))
+avgmat$name <- factor(avgmat$name,levels=allstates_labs)
+
 #Plot boxplots.
 p2 <- ggplot(plotmat,aes(x=name,y=value)) +
+  geom_hline(yintercept=0,linetype='dashed',color='gray50') +
   geom_boxplot() +
+  geom_point(data=avgmat,aes(x=name,y=value),color='red',size=2,shape=18) +
   scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
   ggtitle('MC vs S') +
   ylab('') +
@@ -270,6 +303,8 @@ pltidx <- pltidx + 1
 acmc_mat <- matrix(NA,nrow=nroi,ncol=nall)
 rownames(acmc_mat) <- paste0('r',as.character(1:nroi))
 colnames(acmc_mat) <- allstates
+acmc_avg <- rep(NA,nall)
+names(acmc_avg) <- allstates
 for (cstate in allstates) {
   
   #Extract.
@@ -290,10 +325,16 @@ for (cstate in allstates) {
     cmod_reg <- cmod[,cregion_lab]
     acmc_mat[cregion,cstate] <- cor(cave_reg,cmod_reg)
   }
+  
+  #Correlation of the group-average (across participants) AC and MC, across regions.
+  cave_mean <- colMeans(cave,na.rm=T)
+  cmod_mean <- colMeans(cmod,na.rm=T)
+  acmc_avg[cstate] <- cor(cave_mean,cmod_mean)
 }
 
 #Reformat names.
 colnames(acmc_mat) <- allstates_labs
+names(acmc_avg) <- allstates_labs
 
 #Convert to long format and drop NA and convert to plotting labels.
 plotmat <- data.frame(acmc_mat) %>%
@@ -301,9 +342,16 @@ plotmat <- data.frame(acmc_mat) %>%
   drop_na() 
 plotmat$name <- factor(plotmat$name,levels=allstates_labs)
 
+#Group-average correlation, one point per state.
+avgmat <- data.frame(name=names(acmc_avg),value=as.numeric(acmc_avg)) %>%
+  drop_na()
+avgmat$name <- factor(avgmat$name,levels=allstates_labs)
+
 #Plot boxplots.
 p2 <- ggplot(plotmat,aes(x=name,y=value)) +
+  geom_hline(yintercept=0,linetype='dashed',color='gray50') +
   geom_boxplot() +
+  geom_point(data=avgmat,aes(x=name,y=value),color='red',size=2,shape=18) +
   scale_y_continuous(limits=c(-1,1),breaks=pretty(seq(-1,1,by=0.1),n=6)) +
   ggtitle('AC vs MC') +
   ylab('') +

@@ -62,6 +62,8 @@ Analysis:
 
     cogcon_prep.R - Gather cognitive scores and confounds into one file.
 
+    demos_stats.py - Get gender, race, age, years of education, handedness, g, gF, and gC and print descriptive statistics for them. Save gender subject lists to do gender-restricted analyses.
+
 4. Do LEiDA.
 
     LE_dFC.m - For the mean ROI fMRI timeseries for each run and each participant, conduct LEiDA.
@@ -112,7 +114,7 @@ Analysis:
 
 9. Plot the average matrices for SC, dFC, and sFC and the corresponding average and modal controllability on the brain.
 
-    LE_group_subcontrol_structfunc_stateview.py - For the given k for clustering, SC type of normalization, and thresholding type and percentage, plot the dFC, SC, and sFC matrices organized according to hemisphere and network. Also save the network legends and color bars.
+    LE_group_subcontrol_structfunc_stateview.py - For the given k for clustering, SC type of normalization, and thresholding type and percentage, correlate and plot the dFC, SC, and sFC matrices organized  according to hemisphere and network. Also save the network legends and color bars.
 
     LE_group_subcontrol_structfunc_stateview_brain.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, plot average controllability, modal controllability, and degree on the brain.
 
@@ -120,7 +122,7 @@ Analysis:
 
     LE_group_subcontrol_structfunc_allcorr.py - Find the correlations between g, gF, and gC for the main estimate with CFA. Also find the correlations for estimates based on EFA, PCA, and the NIH toolbox.
 
-    LE_group_subcontrol_structfunc_allcorr.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, generate box plots for the correlation between average controllability, modal controllability, and degree across subjects.
+    LE_group_subcontrol_structfunc_allcorr.R - For the given k for clustering, type of SC normalization, and type and percentage of thresholding, generate box plots for the correlation between average controllability, modal controllability, and degree across subjects along with an annotation of the group-average correlations.
 
 11. Generate Kernel Ridge Regression (KRR) models, comparisons of the models, and relationships between Haufe scores and brain maps and do statistical tests. 
 
@@ -129,6 +131,8 @@ Analysis:
     LE_group_subcontrol_structfunc_KRR_score.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV. This model predicts each cognitive variable in the given batch using either average controllability, modal controllability, or degree calculated from the set of state matrices specified. CV is done for the given repetitions, and inner and outer fold number. To facilitate permutation testing with the same parameters set, for each fold, the Y variable with transformations applied prior to model fitting, alpha, beta, and gamma are all saved. Next, the CV accuracy for the test set, the CV accuracy for the inner CV for the best hyperparameter set, the decomposed CV accuracy for the test set for each feature band, and the decomposed CV accuracy after demeaning of the test set according to the decomposition assumptions are all saved. Lastly, the Haufe scores are also saved.
 
     LE_group_subcontrol_structfunc_KRR_score_format.R - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, collect decomposed accuracy scores on the model predicting each cognitive variable in the given batch using either average controllability, modal controllability, or degree calculated from the set of state matrices specified. Reformat to generate percentages of the total accuracy score.
+
+    LE_group_subcontrol_structfunc_KRR_score_percsep.py - For a given number of repetitions, inner loop number, and outer loop number for CV, for the main model, plot the percentage contributions of each dFC state separately along with SC in for each cognitive variable.
 
     LE_group_subcontrol_structfunc_KRR_perm.py - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, fit models from CV with a single permutation using the same parameters from the original model. The permuted CV accuracy for the test set and Haufe scores are both saved.
 
@@ -141,6 +145,8 @@ Analysis:
     LE_group_subcontrol_structfunc_KRR_analyze_FDR.py - For a given k for clustering, type of SC normalization, type and percentage of thresholding, number of CV repetitions, CV inner k, CV outer k, and number of permutations, FDR correct across model R2 and model R2 comparisons, FDR correct across model Haufe scores, and FDR correct across brain map Spearman's correlations, quadratic regression R2, and Dice coefficients.
 
     LE_group_subcontrol_structfunc_KRR_analyze_featplot.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, controllability type, the set of matrices, the set of cognitive variables, CV repetitions, CV inner fold number, CV outer fold number, and permutation number, plot the regions with significant FDR-corrected Haufe scores.
+
+    LE_group_subcontrol_structfunc_KRR_analyze_barplot.py - For a given number of repetitions, inner loop number, and outer loop number for CV, for the main models of interest including SC and dFC, and the supplementary models including sFC as well, plot bar plots with along with annotations for numerical characteristics including percentage contributions in the models.
 
     LE_group_subcontrol_structfunc_KRR_maplook_plot.py - For a given k for clustering, type of SC normalization, type and percentage of thresholding, number of CV repetitions, inner k, outer k, analysis block, and number of permutations for the analysis, illustrate the relationship between Haufe scores and controllability or strength/principal cortical gradient using scatter plots with the quadratic regression line, labelled with R2 and Spearman's correlation between Haufe scores and controllability or strength, with FDR-corrected significance color-coded.
 
@@ -169,4 +175,11 @@ Analysis:
     LE_group_subcontrol_structfunc_KRR_score_format_cont.R - For a given k for clustering, type of SC normalization, and type and percentage of thresholding, collect decomposed accuracy scores on the model predicting each cognitive variable in the given batch using controllability calculated with the continuous time system calculated from the set of state matrices specified. Reformat to generate percentages of the total accuracy score.
 
     LE_group_subcontrol_structfunc_KRR_score_cont_compare.R - For a given k for clustering, type of SC normalization, type and percentage of thresholding, and control metric, collect feature scores from discrete and continuous time system versions predicting each cognitive variable and correlate them.
-    
+
+16. Compare gender-restricted models.
+
+    LE_group_subcontrol_structfunc_predictF_gender.m - For the given gender, number of repetitions, outer loops, and inner loops for cross validation (CV) and the number of permutations, generate indices respecting family structure. Specifically, make sure families are not split between folds and make sure permutation only happens in blocks of unrelated participants.
+
+    LE_group_subcontrol_structfunc_KRR_score_gender.py - For a given gender, k for clustering, type of SC normalization, and type and percentage of thresholding, fit a model with CV. This model predicts each cognitive variable in the given batch using either average controllability, modal controllability, or degree calculated from the set of state matrices specified. CV is done for the given repetitions, and inner and outer fold number. To facilitate permutation testing with the same parameters set, for each fold, the Y variable with transformations applied prior to model fitting, alpha, beta, and gamma are all saved. Next, the CV accuracy for the test set, the CV accuracy for the inner CV for the best hyperparameter set, the decomposed CV accuracy for the test set for each feature band, and the decomposed CV accuracy after demeaning of the test set according to the decomposition assumptions are all saved. Lastly, the Haufe scores are also saved.
+
+    LE_group_subcontrol_structfunc_KRR_score_paramver gender.py - For a given number of repetitions, inner loop number, and outer loop number for CV, find out whether the main findings of the paper hold across different parameter variations for the SC & dFC model - dFC performs better than SC and controllability and strength exhibit high correspondence, g is predicted better than gF and gC, and the principal gradient exhibits a relationship  with regional importance in the expected direction for dFC. The parameters that is varied is gender. Generate line plots that display these comparisons.

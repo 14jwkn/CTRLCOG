@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 For the given k for clustering, SC type of normalization, and thresholding type
-and percentage, plot the dFC, SC, and sFC matrices organized according to
-hemisphere and network. Also save the network legends and color bars.
+and percentage, correlate and plot the dFC, SC, and sFC matrices organized 
+according to hemisphere and network. Also save the network legends and color bars.
 Output:
+corr_mat.csv Pearson's correlations between SC, sFC, and dFC states.
 dFC_netleg.jpg dFC states network legend.
 dFC_colleg.jpg dFC states color bar. 
 'dFC_S'+str(kidx+1)+'_scaled.jpg' dFC state matrix plotted.
@@ -167,6 +168,36 @@ if __name__ == '__main__':
         netstr = namelist[int(net)-1]
         net_labels.append(lut_dict[netstr])
     net_labels = np.array(net_labels)
+
+    # Read in the SC, sFC, and dFC states to find correlations.
+    inpath = basepath
+    corr_list = []
+    infile = (inpath+'SC_sFC_dFC.h5')
+    inkey = ('SC_'+sctype)
+    instore = h5py.File(infile,'r')
+    inmat = np.array(instore[inkey]).T
+    instore.close()
+    invec = inmat[np.triu_indices_from(inmat,k=1)]
+    corr_list.append(invec)
+    inkey = ('sFC')
+    instore = h5py.File(infile,'r')
+    inmat = np.array(instore[inkey]).T
+    instore.close()
+    invec = inmat[np.triu_indices_from(inmat,k=1)]
+    corr_list.append(invec)
+    for i in range(int(k)):
+        instore = h5py.File(infile,'r')
+        inkey = ('/s'+str(i+1))
+        inmat = np.array(instore[inkey]).T
+        instore.close()
+        invec = inmat[np.triu_indices_from(inmat,k=1)]
+        corr_list.append(invec)
+    corr_mat = pd.DataFrame(np.vstack(corr_list))
+    corr_mat.index = ['SC','sFC'] + [f's{x+1}' for x in range(nk)]
+    corr_out = corr_mat.T.corr()
+    corr_out = corr_out.round(2)
+    outfile = basepath+'corr_mat.csv'
+    corr_out.to_csv(outfile)
 
     #Read in the dFC states and limits.
     inpath = basepath
